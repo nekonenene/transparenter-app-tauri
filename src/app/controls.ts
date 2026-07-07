@@ -146,6 +146,8 @@ export function setupControls(): void {
   el("btn-undo").addEventListener("click", () => undoEdit());
   el("btn-clear-spots").addEventListener("click", () => void clearEdits());
 
+  setupSaveSettings();
+
   store.subscribe((changed) => {
     if (changed.has("keyColor")) updateSwatch();
     if (changed.has("edits")) updateEditCount();
@@ -158,6 +160,37 @@ export function setupControls(): void {
   updateEditCount();
   updateToolHint();
   updateSectionVisibility();
+}
+
+/** 保存設定ポップオーバー(⚙ボタン): 圧縮レベルと256色減色 */
+function setupSaveSettings(): void {
+  const popover = el("save-settings");
+  const toggle = el("btn-save-settings");
+
+  toggle.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    popover.hidden = !popover.hidden;
+  });
+  popover.addEventListener("click", (ev) => ev.stopPropagation());
+  document.addEventListener("click", () => {
+    popover.hidden = true;
+  });
+
+  setupSegment<"fast" | "normal" | "small">("compression-mode", "comp", (c) =>
+    store.set({ exportCompression: c }),
+  );
+
+  const quantizeCheck = el<HTMLInputElement>("export-quantize");
+  quantizeCheck.checked = store.state.exportQuantize;
+  const syncQuantize = () => {
+    // 減色時はパレットPNGになり zlib レベル選択は使われない
+    el("compression-mode").classList.toggle("dimmed", quantizeCheck.checked);
+  };
+  syncQuantize();
+  quantizeCheck.addEventListener("change", () => {
+    store.set({ exportQuantize: quantizeCheck.checked });
+    syncQuantize();
+  });
 }
 
 /**

@@ -1,4 +1,5 @@
 import type { KeyColor, KeyParams } from "../core/types";
+import type { ExportOptions } from "../core/png";
 import type { MainToWorker, WorkerToMain } from "../worker/protocol";
 
 export interface ImageInfo {
@@ -81,11 +82,11 @@ export class ProcessorClient {
     this.post({ type: "process-preview", jobId: ++this.jobSeq, params });
   }
 
-  exportFull(params: KeyParams): Promise<Uint8Array> {
+  exportFull(params: KeyParams, options: ExportOptions): Promise<Uint8Array> {
     const jobId = ++this.jobSeq;
     return new Promise((resolve, reject) => {
       this.fullResolvers.set(jobId, { resolve, reject });
-      this.post({ type: "process-full", jobId, params });
+      this.post({ type: "process-full", jobId, params, options });
     });
   }
 

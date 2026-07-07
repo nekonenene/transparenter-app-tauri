@@ -24,6 +24,10 @@ export interface AppState {
   /** スポット透過・ブラシの編集履歴(⌘Z で新しい順に取り消し) */
   edits: EditOp[];
 
+  /** PNG 保存のファイルサイズ設定 */
+  exportCompression: "fast" | "normal" | "small";
+  exportQuantize: boolean;
+
   viewMode: ViewMode;
   tool: Tool;
 }
@@ -60,6 +64,8 @@ class Store {
     brushSize: 40,
     brushHardness: 0.7,
     edits: [],
+    exportCompression: "normal",
+    exportQuantize: false,
     viewMode: "result",
     tool: "eyedropper",
   };

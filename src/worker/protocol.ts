@@ -1,4 +1,5 @@
 import type { KeyColor, KeyParams } from "../core/types";
+import type { ExportOptions } from "../core/png";
 
 export type MainToWorker =
   | {
@@ -9,7 +10,12 @@ export type MainToWorker =
       previewMaxEdge: number;
     }
   | { type: "process-preview"; jobId: number; params: KeyParams }
-  | { type: "process-full"; jobId: number; params: KeyParams };
+  | {
+      type: "process-full";
+      jobId: number;
+      params: KeyParams;
+      options: ExportOptions;
+    };
 
 export type WorkerToMain =
   | {

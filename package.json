@@ -15,7 +15,8 @@
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-opener": "^2",
-    "fast-png": "^8.0.0"
+    "fast-png": "^8.0.0",
+    "upng-js": "^2.1.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",

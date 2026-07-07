@@ -296,6 +296,42 @@ for (let x = 200; x < 340; x++) {
 }
 check("choke で縁が収縮する", shrunk);
 
+// --- PNG 書き出しオプション ---
+console.log("PNG書き出しオプション:");
+const { decode } = await import("fast-png");
+const pngFast = encodePng(out2, W, H, { compression: "fast", quantize: false });
+const pngSmall = encodePng(out2, W, H, { compression: "small", quantize: false });
+const pngQuant = encodePng(out2, W, H, { compression: "normal", quantize: true });
+check(
+  "最小サイズ ≤ 速い(圧縮レベルが効いている)",
+  pngSmall.byteLength <= pngFast.byteLength,
+  `small=${pngSmall.byteLength} fast=${pngFast.byteLength}`,
+);
+check(
+  "減色PNGは最小サイズよりさらに小さい",
+  pngQuant.byteLength < pngSmall.byteLength,
+  `quant=${pngQuant.byteLength} small=${pngSmall.byteLength}`,
+);
+// 圧縮レベル違いはデコードすると完全一致(ロスレスの確認)
+const decFast = decode(pngFast);
+const decSmall = decode(pngSmall);
+check(
+  "圧縮レベルを変えてもピクセルは完全一致(ロスレス)",
+  decFast.width === W &&
+    decSmall.width === W &&
+    Buffer.compare(
+      Buffer.from(decFast.data.buffer, decFast.data.byteOffset, decFast.data.byteLength),
+      Buffer.from(decSmall.data.buffer, decSmall.data.byteOffset, decSmall.data.byteLength),
+    ) === 0,
+);
+// 減色PNGはデコードできて寸法が一致する
+const decQuant = decode(pngQuant);
+check(
+  "減色PNGが正しくデコードできる",
+  decQuant.width === W && decQuant.height === H,
+  `${decQuant.width}x${decQuant.height}`,
+);
+
 // --- テスト画像の書き出し ---
 mkdirSync("test-images", { recursive: true });
 writeFileSync("test-images/test-green-bg.png", encodePng(src, W, H));

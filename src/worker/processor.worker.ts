@@ -68,7 +68,7 @@ ctx.onmessage = (ev) => {
           full.height,
           msg.params,
         );
-        const png = encodePng(out, full.width, full.height);
+        const png = encodePng(out, full.width, full.height, msg.options);
         const bytes =
           png.byteOffset === 0 && png.byteLength === png.buffer.byteLength
             ? png

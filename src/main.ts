@@ -28,6 +28,12 @@ function setStatus(text: string): void {
   statusEl.textContent = text;
 }
 
+function formatBytes(bytes: number): string {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)}MB`
+    : `${Math.max(1, Math.round(bytes / 1024))}KB`;
+}
+
 // ---- 画像読み込み ----
 
 let loading = false;
@@ -127,9 +133,16 @@ btnSave.addEventListener("click", async () => {
   btnSave.disabled = true;
   setStatus("フル解像度で書き出し中…");
   try {
-    const png = await client.exportFull(store.buildParams());
+    const png = await client.exportFull(store.buildParams(), {
+      compression: store.state.exportCompression,
+      quantize: store.state.exportQuantize,
+    });
     const saved = await savePng(png, store.state.srcPath);
-    setStatus(saved ? `保存しました: ${saved}` : "保存をキャンセルしました");
+    setStatus(
+      saved
+        ? `保存しました: ${saved}(${formatBytes(png.byteLength)})`
+        : "保存をキャンセルしました",
+    );
   } catch (e) {
     setStatus(`保存に失敗しました: ${e instanceof Error ? e.message : e}`);
   } finally {

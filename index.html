@@ -19,7 +19,28 @@
           <button data-mode="semi" title="半透明のピクセルだけを赤く表示">半透明検出</button>
         </div>
         <span id="status"></span>
-        <button id="btn-save" class="primary" disabled>PNGを保存</button>
+        <div id="save-group">
+          <button id="btn-save" class="primary" disabled>PNGを保存</button>
+          <button id="btn-save-settings" title="保存設定">⚙</button>
+          <div id="save-settings" hidden>
+            <h4>保存設定</h4>
+            <p class="hint">
+              PNG は常に無劣化です(減色を除く)。以下はファイルサイズと書き出し時間にのみ影響します。
+            </p>
+            <div class="setting-row">
+              <span>圧縮</span>
+              <div id="compression-mode" class="segment">
+                <button data-comp="fast">速い</button>
+                <button data-comp="normal" class="active">標準</button>
+                <button data-comp="small">最小</button>
+              </div>
+            </div>
+            <label class="check-row">
+              <input type="checkbox" id="export-quantize" />
+              256色に減色(さらに小さく・わずかに劣化)
+            </label>
+          </div>
+        </div>
       </header>
 
       <main>

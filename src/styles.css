@@ -56,6 +56,52 @@ body {
   text-overflow: ellipsis;
 }
 
+/* ---- save settings popover ---- */
+
+#save-group {
+  position: relative;
+  display: flex;
+  gap: 4px;
+}
+
+#btn-save-settings {
+  padding: 6px 9px;
+}
+
+#save-settings {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  width: 280px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+#save-settings[hidden] {
+  display: none;
+}
+
+#save-settings h4 {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
 /* ---- main layout ---- */
 
 main {
