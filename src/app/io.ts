@@ -68,7 +68,7 @@ export async function savePng(
   srcPath: string | null,
 ): Promise<string | null> {
   const path = await save({
-    defaultPath: suggestName(srcPath),
+    defaultPath: suggestPath(srcPath),
     filters: [{ name: "PNG", extensions: ["png"] }],
   });
   if (!path) return null;
@@ -76,11 +76,14 @@ export async function savePng(
   return path;
 }
 
-function suggestName(srcPath: string | null): string {
+/** 元画像と同じフォルダを初期選択にするため、ディレクトリ込みのパスを返す */
+function suggestPath(srcPath: string | null): string {
   if (!srcPath) return "transparent.png";
-  const base = srcPath.split("/").pop()?.split("\\").pop() ?? "image.png";
+  const sep = Math.max(srcPath.lastIndexOf("/"), srcPath.lastIndexOf("\\"));
+  const dir = sep >= 0 ? srcPath.slice(0, sep + 1) : "";
+  const base = sep >= 0 ? srcPath.slice(sep + 1) : srcPath;
   const stem = base.includes(".")
     ? base.slice(0, base.lastIndexOf("."))
     : base;
-  return `${stem}_transparent.png`;
+  return `${dir}${stem}_transparent.png`;
 }
