@@ -46,6 +46,10 @@ function makeImage(): Uint8ClampedArray {
       const cov = Math.min(1, Math.max(0, (124.5 - dc) / 6));
       if (cov > 0) put(i, mix(GREEN, SKIN, cov));
 
+      // 白い服(キャラ内の白い閉領域。白背景での誤透過検証用)
+      const ds = Math.hypot(x - 230, y - 270);
+      if (ds < 20 && cov >= 1) put(i, { r: 250, g: 250, b: 250 });
+
       // 髪の隙間(キャラ内部に背景色が見える閉領域)
       const dg = Math.hypot(x - 200, y - 170);
       const gapCov = Math.min(1, Math.max(0, 18 + 0.5 - dg));
@@ -80,6 +84,7 @@ const baseParams: KeyParams = {
   despill: 0.8,
   choke: 0,
   alphaGamma: 1,
+  borderOnly: false,
   binarize: false,
   binarizeThreshold: 0.5,
   edits: [],
@@ -407,6 +412,51 @@ check("白背景を推定", estW.r > 240 && estW.g > 240 && estW.b > 240, JSON.s
 const outW = applyChromaKey(white, W, H, { ...baseParams, keyColor: estW });
 check("白背景が透明", px(outW, 5, 5).a === 0, `a=${px(outW, 5, 5).a}`);
 check("白背景でもキャラ中心は不透明", px(outW, 200, 240).a === 255, `a=${px(outW, 200, 240).a}`);
+check(
+  "(問題の再現)通常モードではキャラ内の白い服まで透過してしまう",
+  px(outW, 230, 270).a === 0,
+  `a=${px(outW, 230, 270).a}`,
+);
+
+// --- 外周連結モード(白背景の誤透過対策) ---
+console.log("外周連結モード:");
+const outWB = applyChromaKey(white, W, H, {
+  ...baseParams,
+  keyColor: estW,
+  borderOnly: true,
+});
+check("背景(外周連結)は透過される", px(outWB, 5, 5).a === 0);
+check("キャラ内の白い服は不透明に復元される", px(outWB, 230, 270).a === 255, `a=${px(outWB, 230, 270).a}`);
+check("キャラ中心は不透明のまま", px(outWB, 200, 240).a === 255);
+check(
+  "閉じた髪の隙間は不透明に戻る(仕様: スポット透過で個別に抜く)",
+  px(outWB, 200, 170).a === 255,
+  `a=${px(outWB, 200, 170).a}`,
+);
+
+// スポット透過で閉じた隙間を個別に抜ける(白い服には影響しない)
+const outWB2 = applyChromaKey(white, W, H, {
+  ...baseParams,
+  keyColor: estW,
+  borderOnly: true,
+  edits: [
+    {
+      kind: "spot",
+      op: {
+        x: 200 / (W - 1),
+        y: 170 / (H - 1),
+        color: { r: 250, g: 250, b: 250 },
+        tolerance: 0.12,
+        global: false,
+      },
+    },
+  ],
+});
+check(
+  "スポット透過で隙間だけ抜ける(白い服は不透明のまま)",
+  px(outWB2, 200, 170).a === 0 && px(outWB2, 230, 270).a === 255,
+  `gap=${px(outWB2, 200, 170).a} shirt=${px(outWB2, 230, 270).a}`,
+);
 
 // --- 性能 ---
 const t0 = performance.now();

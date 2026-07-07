@@ -1,6 +1,51 @@
 import type { SpotOp } from "./types";
 import { prepareKey, distanceToKey, smoothstep } from "./color";
 
+const OPAQUE = 254.5 / 255;
+
+/**
+ * 透過を「画像の外周とつながった領域」に限定する。
+ * 外周の非不透明ピクセルからフラッドフィルし、到達できなかった
+ * 閉じた領域(白い服・瞳のハイライト等)の α を 1 に復元する。
+ */
+export function restrictToBorderConnected(
+  alpha: Float32Array,
+  width: number,
+  height: number,
+): void {
+  const visited = new Uint8Array(width * height);
+  const stack = new Int32Array(width * height);
+  let sp = 0;
+
+  const seed = (i: number) => {
+    if (!visited[i] && alpha[i] < OPAQUE) {
+      visited[i] = 1;
+      stack[sp++] = i;
+    }
+  };
+  for (let x = 0; x < width; x++) {
+    seed(x);
+    seed((height - 1) * width + x);
+  }
+  for (let y = 0; y < height; y++) {
+    seed(y * width);
+    seed(y * width + width - 1);
+  }
+
+  while (sp > 0) {
+    const i = stack[--sp];
+    const x = i % width;
+    if (x > 0) seed(i - 1);
+    if (x < width - 1) seed(i + 1);
+    if (i >= width) seed(i - width);
+    if (i < width * (height - 1)) seed(i + width);
+  }
+
+  for (let i = 0; i < alpha.length; i++) {
+    if (!visited[i] && alpha[i] < OPAQUE) alpha[i] = 1;
+  }
+}
+
 /**
  * スポット透過(クリックで透過漏れを消す)1操作分の適用。
  *

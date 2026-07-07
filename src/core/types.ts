@@ -46,6 +46,12 @@ export interface KeyParams {
   choke: number;
   /** αのガンマ。>1 で縁が薄く、<1 で縁が濃くなる */
   alphaGamma: number;
+  /**
+   * true なら画像の外周とつながった領域だけを透過する。
+   * 白背景でキャラクター内の白い服・ハイライト等が抜けるのを防ぐ。
+   * 閉じた隙間(髪の間など)は不透明に戻るため、スポット透過で個別に抜く。
+   */
+  borderOnly: boolean;
   /** true なら α を 0 or 1 に二値化し、半透明ピクセルを出力しない */
   binarize: boolean;
   /** 二値化のしきい値(この α 以上を完全不透明にする) */

@@ -1,7 +1,7 @@
 import type { KeyColor, KeyParams } from "./types";
 import { prepareKey, distanceToKey, smoothstep, saturationOf } from "./color";
 import { chokeAlpha } from "./morphology";
-import { applySpotOp } from "./flood-fill";
+import { applySpotOp, restrictToBorderConnected } from "./flood-fill";
 import { DECON_NONE, stampStroke } from "./brush";
 
 /**
@@ -30,6 +30,10 @@ export function applyChromaKey(
     const d = distanceToKey(src[p], src[p + 1], src[p + 2], key);
     alpha[i] = smoothstep(e0, e1, d);
   }
+
+  // 1.5. 外周連結モード: 閉じた領域(白い服等)の誤透過を復元。
+  //      手動編集より前に行うので、髪の隙間などはスポット透過で個別に抜ける
+  if (params.borderOnly) restrictToBorderConnected(alpha, width, height);
 
   // 2. 手動編集(スポット透過・ブラシ)を時系列順に適用。
   //    deconIdx: 0=メインキー、k=スポット操作k番目の色、DECON_NONE=復元しない(ブラシ)

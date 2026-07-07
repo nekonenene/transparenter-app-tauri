@@ -113,6 +113,19 @@ export function setupControls(): void {
   buildSliders(el("sliders-spot"), [SPOT_SLIDER]);
   buildSliders(el("sliders-brush"), BRUSH_SLIDERS);
 
+  // 外周連結モード(白背景向け)。透過調整の一種なのでブラシ編集の保護対象
+  const borderOnlyCheck = el<HTMLInputElement>("border-only");
+  borderOnlyCheck.checked = store.state.borderOnly;
+  borderOnlyCheck.addEventListener("change", () => {
+    void (async () => {
+      if (!(await confirmDiscardBrushEdits())) {
+        borderOnlyCheck.checked = store.state.borderOnly; // キャンセル時は戻す
+        return;
+      }
+      store.set({ borderOnly: borderOnlyCheck.checked });
+    })();
+  });
+
   // 二値化チェックボックス(OFF のときはしきい値スライダーを無効化)
   const binarizeCheck = el<HTMLInputElement>("binarize");
   const binarizeSlider = el("sliders-binarize").querySelector("input")!;

@@ -34,9 +34,12 @@ macOS/Windows 向けデスクトップアプリ。**Tauri v2 + Vite + vanilla Ty
 ### 処理パイプライン(src/core/chroma-key.ts、この順序に意味がある)
 
 1. 適応 YCbCr 距離で α 計算(キー彩度が低い=白背景ほど輝度を加味し色差を増幅)
-2. 手動編集(edits)を**時系列順**に適用(スポット透過 flood-fill / ブラシ stamp)
-3. choke(半透明のみ収縮・不透明コア保護・小数対応)→ alpha gamma
-4. 合成: decontamination(**二値化前の元 α で**)→ despill → 二値化
+2. 外周連結モード(borderOnly): 外周から到達できない閉領域の誤透過を不透明に復元
+   (白背景でキャラ内の白い服等が抜ける問題への対策。手動編集より前に行うので
+   閉じた髪の隙間はスポット透過で個別に抜ける)
+3. 手動編集(edits)を**時系列順**に適用(スポット透過 flood-fill / ブラシ stamp)
+4. choke(半透明のみ収縮・不透明コア保護・小数対応)→ alpha gamma
+5. 合成: decontamination(**二値化前の元 α で**)→ despill → 二値化
 
 ### 編集モデル(重要)
 
