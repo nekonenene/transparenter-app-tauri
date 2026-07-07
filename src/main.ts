@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { PARAM_KEYS, store, type AppState } from "./app/state";
 import { ProcessorClient } from "./app/worker-client";
 import { PreviewView } from "./app/preview";
@@ -135,12 +136,47 @@ btnSave.addEventListener("click", async () => {
 
 // ---- 初期化 ----
 
+// ---- ズーム ----
+
+const zoomLevel = document.getElementById("zoom-level")!;
+preview.onZoomChange = (zoom) => {
+  zoomLevel.textContent = `${Math.round(zoom * 100)}%`;
+};
+document
+  .getElementById("zoom-in")!
+  .addEventListener("click", () => preview.zoomStep(1.25));
+document
+  .getElementById("zoom-out")!
+  .addEventListener("click", () => preview.zoomStep(0.8));
+document
+  .getElementById("zoom-fit")!
+  .addEventListener("click", () => preview.resetZoom());
+window.addEventListener("keydown", (e) => {
+  if (!(e.metaKey || e.ctrlKey)) return;
+  if (e.key === "+" || e.key === "=" || e.key === ";") {
+    preview.zoomStep(1.25);
+    e.preventDefault();
+  } else if (e.key === "-") {
+    preview.zoomStep(0.8);
+    e.preventDefault();
+  } else if (e.key === "0") {
+    preview.resetZoom();
+    e.preventDefault();
+  }
+});
+
+// ---- 初期化 ----
+
 setupControls();
 setupUndoShortcut();
 setupBrushTool(
   document.getElementById("preview") as HTMLCanvasElement,
   preview,
 );
+if (import.meta.env.DEV) {
+  // ブラウザ単体での動作確認用(Tauri API なしでズーム等を試せる)
+  (window as unknown as Record<string, unknown>).__app = { store, preview };
+}
 setupDragDrop(
   (path) => void loadImage(path),
   (over) => {

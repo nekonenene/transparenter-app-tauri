@@ -29,11 +29,100 @@ export class PreviewView {
   private checker: CanvasPattern;
   private lastFit: FitRect | null = null;
 
+  /** ズーム倍率(1 = 全体表示にフィット、最大32) */
+  private zoom = 1;
+  /** ビューポート中心が指す画像上の位置(正規化座標)— 表示ソースの解像度に依存しない */
+  private cx = 0.5;
+  private cy = 0.5;
+  onZoomChange: (zoom: number) => void = () => {};
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d")!;
     this.checker = makeCheckerPattern(this.ctx);
     new ResizeObserver(() => this.render()).observe(canvas);
+    this.setupZoomAndPan();
+  }
+
+  private setupZoomAndPan(): void {
+    // ピンチ(macOSでは ctrlKey 付き wheel)/⌘+ホイール = ズーム、通常スクロール = パン
+    this.canvas.addEventListener(
+      "wheel",
+      (ev) => {
+        if (!this.lastFit) return;
+        ev.preventDefault();
+        const rect = this.canvas.getBoundingClientRect();
+        if (ev.ctrlKey || ev.metaKey) {
+          const factor = Math.exp(-ev.deltaY * 0.01);
+          this.zoomAt(ev.clientX - rect.left, ev.clientY - rect.top, factor);
+        } else {
+          this.panBy(ev.deltaX, ev.deltaY);
+        }
+      },
+      { passive: false },
+    );
+
+    // 中ボタンドラッグでパン
+    let panning: { x: number; y: number } | null = null;
+    this.canvas.addEventListener("mousedown", (ev) => {
+      if (ev.button === 1 && this.lastFit) {
+        ev.preventDefault();
+        panning = { x: ev.clientX, y: ev.clientY };
+      }
+    });
+    window.addEventListener("mousemove", (ev) => {
+      if (!panning) return;
+      this.panBy(panning.x - ev.clientX, panning.y - ev.clientY);
+      panning = { x: ev.clientX, y: ev.clientY };
+    });
+    window.addEventListener("mouseup", () => {
+      panning = null;
+    });
+  }
+
+  /** カーソル位置の画像上の点を固定したままズームする */
+  zoomAt(mx: number, my: number, factor: number): void {
+    const fit = this.lastFit;
+    if (!fit) return;
+    const newZoom = Math.min(32, Math.max(1, this.zoom * factor));
+    if (newZoom === this.zoom) return;
+    const nx = (mx - fit.ox) / fit.drawW;
+    const ny = (my - fit.oy) / fit.drawH;
+    const cssW = this.canvas.clientWidth;
+    const cssH = this.canvas.clientHeight;
+    const scale = newZoom / this.zoom;
+    this.cx = nx + (cssW / 2 - mx) / (fit.drawW * scale);
+    this.cy = ny + (cssH / 2 - my) / (fit.drawH * scale);
+    this.zoom = newZoom;
+    this.render();
+    this.onZoomChange(this.zoom);
+  }
+
+  /** ビュー中心を基準にズーム(⌘+/− やボタン用) */
+  zoomStep(factor: number): void {
+    this.zoomAt(
+      this.canvas.clientWidth / 2,
+      this.canvas.clientHeight / 2,
+      factor,
+    );
+  }
+
+  resetZoom(): void {
+    if (this.zoom === 1) return;
+    this.zoom = 1;
+    this.cx = 0.5;
+    this.cy = 0.5;
+    this.render();
+    this.onZoomChange(this.zoom);
+  }
+
+  /** CSS px 単位でビューを移動(スクロール方向に画像が流れる) */
+  panBy(dxCss: number, dyCss: number): void {
+    const fit = this.lastFit;
+    if (!fit || this.zoom === 1) return;
+    this.cx += dxCss / fit.drawW;
+    this.cy += dyCss / fit.drawH;
+    this.render();
   }
 
   setOriginal(img: ImageData | null): void {
@@ -43,7 +132,11 @@ export class PreviewView {
     this.resultCache = null;
     this.alphaCache = null;
     this.semiCache = null;
+    this.zoom = 1;
+    this.cx = 0.5;
+    this.cy = 0.5;
     this.render();
+    this.onZoomChange(this.zoom);
   }
 
   setResult(img: ImageData): void {
@@ -106,11 +199,18 @@ export class PreviewView {
 
     const imgW = src.width;
     const imgH = src.height;
-    const s = Math.min(cssW / imgW, cssH / imgH);
+    const s = Math.min(cssW / imgW, cssH / imgH) * this.zoom;
     const drawW = imgW * s;
     const drawH = imgH * s;
-    const ox = (cssW - drawW) / 2;
-    const oy = (cssH - drawH) / 2;
+
+    // ビュー中心のクランプ: 画像が収まる軸は中央固定、はみ出す軸は端まで
+    const vx = Math.min(1, cssW / drawW) / 2;
+    const vy = Math.min(1, cssH / drawH) / 2;
+    this.cx = drawW <= cssW ? 0.5 : Math.min(1 - vx, Math.max(vx, this.cx));
+    this.cy = drawH <= cssH ? 0.5 : Math.min(1 - vy, Math.max(vy, this.cy));
+
+    const ox = cssW / 2 - this.cx * drawW;
+    const oy = cssH / 2 - this.cy * drawH;
     this.lastFit = { ox, oy, drawW, drawH, imgW, imgH };
 
     // 透明部分が見えるように画像の下にだけチェッカーボードを敷く
