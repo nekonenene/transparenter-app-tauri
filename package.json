@@ -16,7 +16,7 @@
     "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-opener": "^2",
     "fast-png": "^8.0.0",
-    "upng-js": "^2.1.0"
+    "fflate": "^0.8.3"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",

@@ -35,6 +35,7 @@ export class ProcessorClient {
   private pendingPreview: KeyParams | null = null;
 
   private imageReadyResolve: ((info: ImageInfo) => void) | null = null;
+  private imageReadyReject: ((e: Error) => void) | null = null;
   private fullResolvers = new Map<
     number,
     { resolve: (png: Uint8Array) => void; reject: (e: Error) => void }
@@ -51,6 +52,19 @@ export class ProcessorClient {
     );
     this.worker.onmessage = (ev: MessageEvent<WorkerToMain>) =>
       this.handleMessage(ev.data);
+    // Worker がロード失敗やクラッシュしたとき、待機中の処理を全て失敗させる
+    // (これが無いと「読み込み中…」のまま固まる)
+    this.worker.onerror = (ev: ErrorEvent) => {
+      const error = new Error(ev.message || "画像処理ワーカーでエラーが発生しました");
+      this.previewBusy = false;
+      this.pendingPreview = null;
+      this.imageReadyReject?.(error);
+      this.imageReadyResolve = null;
+      this.imageReadyReject = null;
+      for (const { reject } of this.fullResolvers.values()) reject(error);
+      this.fullResolvers.clear();
+      this.onError(error.message);
+    };
   }
 
   setImage(img: ImageData): Promise<ImageInfo> {
@@ -58,8 +72,9 @@ export class ProcessorClient {
     const copy = img.data.slice();
     this.pendingPreview = null;
     this.previewBusy = false;
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.imageReadyResolve = resolve;
+      this.imageReadyReject = reject;
       this.post(
         {
           type: "set-image",
@@ -99,6 +114,7 @@ export class ProcessorClient {
           estimatedKey: msg.estimatedKey,
         });
         this.imageReadyResolve = null;
+        this.imageReadyReject = null;
         break;
       }
       case "preview-result": {

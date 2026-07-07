@@ -5,6 +5,7 @@
  * ついでにテスト用 PNG を test-images/ に書き出す。
  */
 import { applyChromaKey } from "../src/core/chroma-key";
+import { quantize } from "../src/core/quantize";
 import { estimateKeyColor } from "../src/core/estimate-key";
 import { encodePng } from "../src/core/png";
 import type { BrushStroke, KeyParams, SpotOp } from "../src/core/types";
@@ -331,6 +332,29 @@ check(
   decQuant.width === W && decQuant.height === H,
   `${decQuant.width}x${decQuant.height}`,
 );
+
+// quantize: 大きい画像でも 256 色以内に収まる
+const q = quantize(out2, 256);
+check("量子化後の色数が256以下", q.colorCount <= 256, `${q.colorCount}`);
+
+// quantize: ユニーク色が256以下なら完全ロスレス
+const tiny = new Uint8ClampedArray(4 * 4 * 4);
+const tinyColors = [
+  [255, 0, 0, 255],
+  [0, 255, 0, 128],
+  [0, 0, 255, 255],
+  [0, 0, 0, 0],
+];
+for (let i = 0; i < 16; i++) tiny.set(tinyColors[i % 4], i * 4);
+const qt = quantize(tiny, 256);
+let losslessOk = qt.colorCount === 4;
+for (let i = 0; i < 16 && losslessOk; i++) {
+  const pi = qt.indices[i] * 4;
+  for (let ch = 0; ch < 4; ch++) {
+    if (qt.palette[pi + ch] !== tiny[i * 4 + ch]) losslessOk = false;
+  }
+}
+check("256色以下の画像は量子化してもロスレス", losslessOk);
 
 // --- テスト画像の書き出し ---
 mkdirSync("test-images", { recursive: true });
