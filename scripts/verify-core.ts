@@ -217,6 +217,26 @@ for (let x = 200; x < 220; x++) {
 }
 check("ソフト縁ブラシは境界がなだらか", softEdge);
 
+// 1px ブラシ(半径 0.5px)はちょうど 1 ピクセルだけを塗る
+const onePxStroke: BrushStroke = {
+  points: [{ x: 200 / (W - 1), y: 240 / (H - 1) }],
+  radius: 0.5 / Math.max(W, H),
+  hardness: 1,
+  mode: "erase",
+};
+const out1px = applyChromaKey(src, W, H, {
+  ...baseParams,
+  edits: [{ kind: "brush", stroke: onePxStroke }],
+});
+check("1pxブラシで中心だけが透明になる", px(out1px, 200, 240).a === 0, `a=${px(out1px, 200, 240).a}`);
+check(
+  "1pxブラシの隣接ピクセルは影響を受けない",
+  px(out1px, 201, 240).a === 255 &&
+    px(out1px, 199, 240).a === 255 &&
+    px(out1px, 200, 239).a === 255 &&
+    px(out1px, 200, 241).a === 255,
+);
+
 // ⌘Z 相当: 編集を除けば元に戻る(時系列適用の確認を兼ねる)
 const outUndo = applyChromaKey(src, W, H, { ...baseParams, edits: [] });
 check("編集を取り消すと元の結果に一致", outUndo.every((v, i) => v === out[i]));

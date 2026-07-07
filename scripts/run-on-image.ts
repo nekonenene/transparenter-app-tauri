@@ -32,8 +32,14 @@ if (png.channels === 4) {
 
 console.log(`input: ${png.width}x${png.height}`);
 
+// アプリのプレビュー解像度と同じ適応ロジック(~500万画素までは原寸)
+const budget = 5_000_000;
+const longEdge = Math.max(png.width, png.height);
+const maxEdge =
+  n <= budget ? longEdge : Math.floor(longEdge * Math.sqrt(budget / n));
+
 let t = performance.now();
-const preview = resizeToFit(rgba, png.width, png.height, 1200);
+const preview = resizeToFit(rgba, png.width, png.height, maxEdge);
 console.log(
   `resize -> ${preview.width}x${preview.height}: ${(performance.now() - t).toFixed(0)}ms`,
 );

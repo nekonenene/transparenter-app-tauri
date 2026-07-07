@@ -18,7 +18,8 @@ export function stampStroke(
   stroke: BrushStroke,
   deconIdx: Uint8Array,
 ): void {
-  const r = Math.max(1, stroke.radius * Math.max(width, height));
+  // 最小 0.5(距離 0.5 未満は中心ピクセルのみ)= ちょうど 1px のブラシを許す
+  const r = Math.max(0.5, stroke.radius * Math.max(width, height));
   // 硬さ: 内側 hardness*r まではベタ、そこから外周にかけて減衰
   const inner = r * Math.min(1, Math.max(0, stroke.hardness));
   const pts = stroke.points;

@@ -7,7 +7,19 @@ export interface ImageInfo {
   estimatedKey: KeyColor;
 }
 
-const PREVIEW_MAX_EDGE = 1200;
+/**
+ * プレビューの画素数バジェット。この範囲なら原寸で処理し、ブラシの
+ * ピクセル単位編集がプレビューにも正確に反映される。超える巨大画像のみ
+ * 縮小してリアルタイム性を保つ(1パス ~60ms 程度が上限の目安)。
+ */
+const PREVIEW_PIXEL_BUDGET = 5_000_000;
+
+function previewMaxEdge(width: number, height: number): number {
+  const pixels = width * height;
+  const longEdge = Math.max(width, height);
+  if (pixels <= PREVIEW_PIXEL_BUDGET) return longEdge;
+  return Math.floor(longEdge * Math.sqrt(PREVIEW_PIXEL_BUDGET / pixels));
+}
 
 /**
  * 処理 Worker のラッパ。
@@ -53,7 +65,7 @@ export class ProcessorClient {
           width: img.width,
           height: img.height,
           buffer: copy.buffer as ArrayBuffer,
-          previewMaxEdge: PREVIEW_MAX_EDGE,
+          previewMaxEdge: previewMaxEdge(img.width, img.height),
         },
         [copy.buffer as ArrayBuffer],
       );

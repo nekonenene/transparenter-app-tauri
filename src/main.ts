@@ -153,7 +153,10 @@ function updateBrushSizeInfo(): void {
     return;
   }
   const norm = brushSize / 2 / Math.max(fit.drawW, fit.drawH);
-  const px = Math.round(2 * norm * Math.max(original.width, original.height));
+  const px = Math.max(
+    1,
+    Math.round(2 * norm * Math.max(original.width, original.height)),
+  );
   brushSizeInfo.textContent = `画像上の直径: 約 ${px}px(ズームインすると細かく塗れます)`;
 }
 

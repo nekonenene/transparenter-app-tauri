@@ -83,11 +83,12 @@ const SPOT_SLIDER: SliderDef = {
 const BRUSH_SLIDERS: SliderDef[] = [
   {
     key: "brushSize",
-    label: "ブラシサイズ(画面上の大きさ)",
+    label: "ブラシサイズ",
     min: 4,
     max: 150,
     step: 2,
-    format: (v) => `${v}px`,
+    // px 表示は「画像上の直径」(main.ts の参考表示)に一本化する
+    format: () => "",
   },
   {
     key: "brushHardness",

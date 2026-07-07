@@ -65,10 +65,16 @@ export function setupBrushTool(
     const fit = preview.fitRect();
     if (!pos || !fit) return;
     ev.preventDefault();
+    // 画面上の直径 → 画像長辺に対する半径比率(ストローク開始時のズームで確定)。
+    // 下限は画像上でちょうど 1px(半径 0.5px)
+    const fullEdge = Math.max(s.original.width, s.original.height);
+    const radius = Math.max(
+      s.brushSize / 2 / Math.max(fit.drawW, fit.drawH),
+      0.5 / fullEdge,
+    );
     stroke = {
       points: [{ x: pos.u, y: pos.v }],
-      // 画面上の直径 → 画像長辺に対する半径比率(ストローク開始時のズームで確定)
-      radius: s.brushSize / 2 / Math.max(fit.drawW, fit.drawH),
+      radius,
       hardness: s.brushHardness,
       mode: s.brushMode,
     };
