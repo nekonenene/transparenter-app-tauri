@@ -46,11 +46,11 @@ const MAIN_SLIDERS: SliderDef[] = [
   },
   {
     key: "choke",
-    label: "縁の収縮(px)",
+    label: "縁の収縮(半透明の縁のみ・px)",
     min: 0,
     max: 3,
-    step: 1,
-    format: (v) => `${v}`,
+    step: 0.1,
+    format: (v) => v.toFixed(1),
     guarded: true,
   },
   {

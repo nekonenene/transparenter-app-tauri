@@ -283,19 +283,43 @@ for (let i = 0; i < W * H && !(promoted && demoted); i++) {
 }
 check("昇格・降格の対象ピクセルが両方存在した", promoted && demoted);
 
-// --- choke ---
+// --- choke(半透明フリンジのみ収縮、不透明コアは保護) ---
 console.log("choke:");
 const out3 = applyChromaKey(src, W, H, { ...baseParams, choke: 2 });
-let shrunk = false;
-for (let x = 200; x < 340; x++) {
-  const before = px(out, x, 210).a;
-  const after = px(out3, x, 210).a;
-  if (before === 255 && after < 255) {
-    shrunk = true;
+let semiShrunk = false;
+let coreProtected = true;
+for (let i = 0; i < W * H; i++) {
+  const before = out[i * 4 + 3];
+  const after = out3[i * 4 + 3];
+  if (before > 0 && before < 255 && after < before) semiShrunk = true;
+  if (before === 255 && after !== 255) coreProtected = false;
+}
+check("choke で半透明の縁が収縮する", semiShrunk);
+check("完全不透明のピクセルは choke で削られない(コア保護)", coreProtected);
+
+// 3px幅の不透明な髪の毛が choke=2 でも途切れない(旧実装では消えていた)
+check(
+  "細い髪の毛が choke でも途切れない",
+  px(out3, 199, 75).a === 255 &&
+    px(out3, 200, 75).a === 255 &&
+    px(out3, 201, 75).a === 255,
+  `a=${px(out3, 199, 75).a},${px(out3, 200, 75).a},${px(out3, 201, 75).a}`,
+);
+
+// 小数 choke: 0.5 は 0 と 1 の中間の強さになる
+const chokeHalf = applyChromaKey(src, W, H, { ...baseParams, choke: 0.5 });
+const chokeOne = applyChromaKey(src, W, H, { ...baseParams, choke: 1 });
+let fractionalOk = false;
+for (let i = 0; i < W * H; i++) {
+  const a0 = out[i * 4 + 3];
+  const aH = chokeHalf[i * 4 + 3];
+  const a1 = chokeOne[i * 4 + 3];
+  if (a0 > 0 && a0 < 255 && a1 < aH && aH < a0) {
+    fractionalOk = true;
     break;
   }
 }
-check("choke で縁が収縮する", shrunk);
+check("小数 choke(0.5)は 0 と 1 の中間の強さ", fractionalOk);
 
 // --- PNG 書き出しオプション ---
 console.log("PNG書き出しオプション:");

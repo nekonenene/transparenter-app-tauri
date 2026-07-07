@@ -1,6 +1,6 @@
 import type { KeyColor, KeyParams } from "./types";
 import { prepareKey, distanceToKey, smoothstep, saturationOf } from "./color";
-import { erodeAlpha } from "./morphology";
+import { chokeAlpha } from "./morphology";
 import { applySpotOp } from "./flood-fill";
 import { DECON_NONE, stampStroke } from "./brush";
 
@@ -54,7 +54,7 @@ export function applyChromaKey(
   }
 
   // 3. choke と gamma
-  if (params.choke > 0) erodeAlpha(alpha, width, height, params.choke);
+  if (params.choke > 0) chokeAlpha(alpha, width, height, params.choke);
   const gamma = params.alphaGamma;
   if (Math.abs(gamma - 1) > 0.001) {
     for (let i = 0; i < n; i++) {
