@@ -161,6 +161,10 @@ main {
   gap: 10px;
 }
 
+#panel section[hidden] {
+  display: none;
+}
+
 #panel h3 {
   font-size: 12px;
   font-weight: 600;

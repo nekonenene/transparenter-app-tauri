@@ -52,18 +52,12 @@
             <p class="hint" id="tool-hint"></p>
           </section>
 
-          <section>
+          <section id="section-adjust">
             <h3>透過調整</h3>
             <div id="sliders-main"></div>
-            <label class="check-row">
-              <input type="checkbox" id="binarize" />
-              半透明をなくす(0/1に確定)
-            </label>
-            <div id="sliders-binarize"></div>
-            <p class="hint" id="semi-info"></p>
           </section>
 
-          <section>
+          <section id="section-spot">
             <h3>追加透過(残った部分をクリックで消す)</h3>
             <div id="sliders-spot"></div>
             <label class="check-row">
@@ -72,7 +66,7 @@
             </label>
           </section>
 
-          <section>
+          <section id="section-brush">
             <h3>ブラシ(透明・不透明を塗って直す)</h3>
             <div id="brush-mode" class="segment">
               <button data-brushmode="opaque" class="active">不透明に戻す</button>
@@ -81,7 +75,17 @@
             <div id="sliders-brush"></div>
           </section>
 
-          <section>
+          <section id="section-binarize">
+            <h3>半透明の仕上げ</h3>
+            <label class="check-row">
+              <input type="checkbox" id="binarize" />
+              半透明をなくす(0/1に確定)
+            </label>
+            <div id="sliders-binarize"></div>
+            <p class="hint" id="semi-info"></p>
+          </section>
+
+          <section id="section-history">
             <h3>編集履歴</h3>
             <div class="button-row">
               <button id="btn-undo" disabled>元に戻す (⌘Z)</button>

@@ -6,6 +6,7 @@ import { setupControls } from "./app/controls";
 import { sampleColor } from "./app/eyedropper";
 import { addSpotOp, setupUndoShortcut } from "./app/spot-tool";
 import { setupBrushTool } from "./app/brush-tool";
+import { confirmDiscardBrushEdits } from "./app/edit-guard";
 import {
   loadImageFromPath,
   pickImagePath,
@@ -97,12 +98,14 @@ store.subscribe((changed: Set<keyof AppState>) => {
 
 (document.getElementById("preview") as HTMLCanvasElement).addEventListener(
   "click",
-  (ev) => {
+  async (ev) => {
     const { original, tool } = store.state;
     if (!original || tool === "brush") return; // ブラシは mousedown/move で処理
     const pos = preview.clientToNormalized(ev);
     if (!pos) return;
     if (tool === "eyedropper") {
+      // キー色の変更は結果が大きく変わるため、ブラシ編集があれば確認して削除
+      if (!(await confirmDiscardBrushEdits())) return;
       const color = sampleColor(original, pos.u, pos.v);
       store.set({ keyColor: color });
       setStatus(`キー色を取得: RGB(${color.r}, ${color.g}, ${color.b})`);

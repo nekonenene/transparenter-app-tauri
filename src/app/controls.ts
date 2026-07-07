@@ -1,6 +1,7 @@
 import { store, type AppState } from "./state";
 import type { Tool, ViewMode } from "../core/types";
 import { clearEdits, undoEdit } from "./spot-tool";
+import { confirmDiscardBrushEdits, hasBrushEdits } from "./edit-guard";
 
 interface SliderDef {
   key: keyof AppState;
@@ -9,6 +10,8 @@ interface SliderDef {
   max: number;
   step: number;
   format: (v: number) => string;
+  /** true ならブラシ編集がある状態での変更時に確認ダイアログを出す */
+  guarded?: boolean;
 }
 
 const MAIN_SLIDERS: SliderDef[] = [
@@ -19,6 +22,7 @@ const MAIN_SLIDERS: SliderDef[] = [
     max: 0.4,
     step: 0.005,
     format: pct,
+    guarded: true,
   },
   {
     key: "smoothness",
@@ -27,6 +31,7 @@ const MAIN_SLIDERS: SliderDef[] = [
     max: 0.3,
     step: 0.005,
     format: pct,
+    guarded: true,
   },
   {
     key: "despill",
@@ -35,6 +40,7 @@ const MAIN_SLIDERS: SliderDef[] = [
     max: 1,
     step: 0.05,
     format: pct,
+    guarded: true,
   },
   {
     key: "choke",
@@ -43,6 +49,7 @@ const MAIN_SLIDERS: SliderDef[] = [
     max: 3,
     step: 1,
     format: (v) => `${v}`,
+    guarded: true,
   },
   {
     key: "alphaGamma",
@@ -51,6 +58,7 @@ const MAIN_SLIDERS: SliderDef[] = [
     max: 2.5,
     step: 0.05,
     format: (v) => v.toFixed(2),
+    guarded: true,
   },
 ];
 
@@ -137,11 +145,28 @@ export function setupControls(): void {
   store.subscribe((changed) => {
     if (changed.has("keyColor")) updateSwatch();
     if (changed.has("edits")) updateEditCount();
-    if (changed.has("tool")) updateToolHint();
+    if (changed.has("tool")) {
+      updateToolHint();
+      updateSectionVisibility();
+    }
   });
   updateSwatch();
   updateEditCount();
   updateToolHint();
+  updateSectionVisibility();
+}
+
+/**
+ * ツールに応じたセクションの出し分け。
+ * ブラシは最終調整なので、ブラシモード中は透過調整を隠す
+ * (「半透明の仕上げ」はブラシ後にも使うため常時表示)。
+ * 追加透過の設定は追加透過モードのときだけ表示する。
+ */
+function updateSectionVisibility(): void {
+  const tool = store.state.tool;
+  el("section-adjust").hidden = tool === "brush";
+  el("section-spot").hidden = tool !== "spot";
+  el("section-brush").hidden = tool !== "brush";
 }
 
 function buildSliders(container: HTMLElement, defs: SliderDef[]): void {
@@ -170,6 +195,16 @@ function buildSliders(container: HTMLElement, defs: SliderDef[]): void {
       value.textContent = def.format(v);
       store.set({ [def.key]: v } as Partial<AppState>);
     });
+
+    if (def.guarded) {
+      // ブラシは最終調整という位置づけ。塗った後に調整を触ろうとしたら
+      // 確認を挟み、OK ならブラシ編集を削除してから操作を受け付ける
+      input.addEventListener("pointerdown", (ev) => {
+        if (!hasBrushEdits()) return;
+        ev.preventDefault();
+        void confirmDiscardBrushEdits();
+      });
+    }
 
     row.append(head, input);
     container.append(row);
