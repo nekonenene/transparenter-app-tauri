@@ -1,4 +1,4 @@
-import type { KeyColor, KeyParams, SpotOp, Tool, ViewMode } from "../core/types";
+import type { EditOp, KeyColor, KeyParams, Tool, ViewMode } from "../core/types";
 
 export interface AppState {
   srcPath: string | null;
@@ -15,7 +15,13 @@ export interface AppState {
 
   spotTolerance: number;
   spotGlobal: boolean;
-  spotOps: SpotOp[];
+
+  brushMode: "opaque" | "erase";
+  brushSize: number; // 画像長辺に対する比率
+  brushHardness: number;
+
+  /** スポット透過・ブラシの編集履歴(⌘Z で新しい順に取り消し) */
+  edits: EditOp[];
 
   viewMode: ViewMode;
   tool: Tool;
@@ -30,7 +36,7 @@ export const PARAM_KEYS: (keyof AppState)[] = [
   "alphaGamma",
   "binarize",
   "binarizeThreshold",
-  "spotOps",
+  "edits",
 ];
 
 type Listener = (changed: Set<keyof AppState>) => void;
@@ -49,7 +55,10 @@ class Store {
     binarizeThreshold: 0.5,
     spotTolerance: 0.12,
     spotGlobal: false,
-    spotOps: [],
+    brushMode: "opaque",
+    brushSize: 0.04,
+    brushHardness: 0.7,
+    edits: [],
     viewMode: "result",
     tool: "eyedropper",
   };
@@ -83,7 +92,7 @@ class Store {
       alphaGamma: s.alphaGamma,
       binarize: s.binarize,
       binarizeThreshold: s.binarizeThreshold,
-      spotOps: s.spotOps,
+      edits: s.edits,
     };
   }
 }

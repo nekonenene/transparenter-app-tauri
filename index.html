@@ -25,6 +25,7 @@
       <main>
         <div id="canvas-wrap">
           <canvas id="preview"></canvas>
+          <div id="brush-cursor"></div>
           <div id="dropzone">
             <p>ここに画像をドラッグ&amp;ドロップ<br />または「画像を開く」</p>
           </div>
@@ -40,6 +41,7 @@
             <div id="tool-switch" class="segment">
               <button data-tool="eyedropper" class="active">スポイト</button>
               <button data-tool="spot">追加透過</button>
+              <button data-tool="brush">ブラシ</button>
             </div>
             <p class="hint" id="tool-hint"></p>
           </section>
@@ -62,6 +64,19 @@
               <input type="checkbox" id="spot-global" />
               同じ色を画像全体から透過
             </label>
+          </section>
+
+          <section>
+            <h3>ブラシ(透明・不透明を塗って直す)</h3>
+            <div id="brush-mode" class="segment">
+              <button data-brushmode="opaque" class="active">不透明に戻す</button>
+              <button data-brushmode="erase">透明にする</button>
+            </div>
+            <div id="sliders-brush"></div>
+          </section>
+
+          <section>
+            <h3>編集履歴</h3>
             <div class="button-row">
               <button id="btn-undo" disabled>元に戻す (⌘Z)</button>
               <button id="btn-clear-spots" disabled>全て消去</button>

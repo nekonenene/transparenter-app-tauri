@@ -77,6 +77,19 @@ main {
   cursor: crosshair;
 }
 
+#brush-cursor {
+  position: absolute;
+  display: none;
+  border: 2px solid rgba(120, 180, 255, 0.9);
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+#brush-cursor.erase {
+  border-color: rgba(255, 110, 110, 0.9);
+}
+
 #dropzone {
   position: absolute;
   inset: 16px;

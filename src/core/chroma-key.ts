@@ -1,7 +1,8 @@
 import type { KeyColor, KeyParams } from "./types";
 import { prepareKey, distanceToKey, smoothstep, saturationOf } from "./color";
 import { erodeAlpha } from "./morphology";
-import { applySpotOps } from "./flood-fill";
+import { applySpotOp } from "./flood-fill";
+import { DECON_NONE, stampStroke } from "./brush";
 
 /**
  * クロマキーのメインパイプライン。RGBA バッファを受け取り、透過済み RGBA を返す。
@@ -30,10 +31,26 @@ export function applyChromaKey(
     alpha[i] = smoothstep(e0, e1, d);
   }
 
-  // 2. スポット透過。deconIdx: 0=メインキー、k+1=spotOps[k] が α を決めた
+  // 2. 手動編集(スポット透過・ブラシ)を時系列順に適用。
+  //    deconIdx: 0=メインキー、k=スポット操作k番目の色、DECON_NONE=復元しない(ブラシ)
   const deconIdx = new Uint8Array(n);
-  if (params.spotOps.length > 0) {
-    applySpotOps(src, width, height, alpha, params.spotOps, deconIdx);
+  const deconColors: KeyColor[] = [params.keyColor];
+  for (const edit of params.edits) {
+    if (edit.kind === "spot") {
+      if (deconColors.length >= DECON_NONE) continue; // 上限(実用上到達しない)
+      deconColors.push(edit.op.color);
+      applySpotOp(
+        src,
+        width,
+        height,
+        alpha,
+        edit.op,
+        deconIdx,
+        deconColors.length - 1,
+      );
+    } else {
+      stampStroke(alpha, width, height, edit.stroke, deconIdx);
+    }
   }
 
   // 3. choke と gamma
@@ -50,11 +67,6 @@ export function applyChromaKey(
   const out = new Uint8ClampedArray(n * 4);
   const spill = spillChannel(params.keyColor);
   const despillAmount = params.despill;
-  const deconColors: KeyColor[] = [
-    params.keyColor,
-    ...params.spotOps.map((o) => o.color),
-  ];
-
   const { binarize, binarizeThreshold } = params;
 
   for (let i = 0, p = 0; i < n; i++, p += 4) {
@@ -71,7 +83,7 @@ export function applyChromaKey(
     let g = src[p + 1];
     let b = src[p + 2];
 
-    if (a < 1) {
+    if (a < 1 && deconIdx[i] !== DECON_NONE) {
       // pixel = a·fg + (1−a)·key と仮定して前景色を復元(髪の隙間の背景色除去)
       const kc = deconColors[deconIdx[i]];
       const inv = 1 - a;

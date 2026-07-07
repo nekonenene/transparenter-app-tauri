@@ -7,7 +7,7 @@
 import { applyChromaKey } from "../src/core/chroma-key";
 import { estimateKeyColor } from "../src/core/estimate-key";
 import { encodePng } from "../src/core/png";
-import type { KeyParams, SpotOp } from "../src/core/types";
+import type { BrushStroke, KeyParams, SpotOp } from "../src/core/types";
 import { writeFileSync, mkdirSync } from "node:fs";
 
 const W = 400;
@@ -81,7 +81,7 @@ const baseParams: KeyParams = {
   alphaGamma: 1,
   binarize: false,
   binarizeThreshold: 0.5,
-  spotOps: [],
+  edits: [],
 };
 
 let failures = 0;
@@ -162,10 +162,64 @@ const spot: SpotOp = {
   tolerance: 0.12,
   global: false,
 };
-const out2 = applyChromaKey(src, W, H, { ...baseParams, spotOps: [spot] });
+const out2 = applyChromaKey(src, W, H, {
+  ...baseParams,
+  edits: [{ kind: "spot", op: spot }],
+});
 check("クリックでパッチが透明になる", px(out2, 60, 330).a === 0, `a=${px(out2, 60, 330).a}`);
 check("キャラ本体は影響を受けない", px(out2, 200, 240).a === 255);
 check("背景は透明のまま", px(out2, 5, 5).a === 0);
+
+// --- ブラシ ---
+console.log("ブラシ:");
+// 不透明化ブラシ: 透過済みの背景の一角を塗って不透明に戻す
+const opaqueStroke: BrushStroke = {
+  points: [
+    { x: 40 / (W - 1), y: 40 / (H - 1) },
+    { x: 80 / (W - 1), y: 40 / (H - 1) },
+  ],
+  radius: 0.04, // 長辺400px → 半径16px
+  hardness: 1,
+  mode: "opaque",
+};
+const outOp = applyChromaKey(src, W, H, {
+  ...baseParams,
+  edits: [{ kind: "brush", stroke: opaqueStroke }],
+});
+const restored = px(outOp, 60, 40);
+check("不透明化ブラシで α=255 に戻る", restored.a === 255, `a=${restored.a}`);
+check("ブラシ外の背景は透明のまま", px(outOp, 300, 40).a === 0);
+
+// 透明化ブラシ: キャラ本体の一部を塗って消す
+const eraseStroke: BrushStroke = {
+  points: [{ x: 200 / (W - 1), y: 240 / (H - 1) }],
+  radius: 0.04,
+  hardness: 1,
+  mode: "erase",
+};
+const outEr = applyChromaKey(src, W, H, {
+  ...baseParams,
+  edits: [{ kind: "brush", stroke: eraseStroke }],
+});
+check("透明化ブラシで α=0 になる", px(outEr, 200, 240).a === 0, `a=${px(outEr, 200, 240).a}`);
+check("ブラシ外のキャラは不透明のまま", px(outEr, 130, 280).a === 255, `a=${px(outEr, 130, 280).a}`);
+
+// 硬さ<1 のとき縁に半透明の減衰が生じる
+const softStroke: BrushStroke = { ...eraseStroke, hardness: 0.3 };
+const outSoft = applyChromaKey(src, W, H, {
+  ...baseParams,
+  edits: [{ kind: "brush", stroke: softStroke }],
+});
+let softEdge = false;
+for (let x = 200; x < 220; x++) {
+  const a = px(outSoft, x, 240).a;
+  if (a > 0 && a < 255) softEdge = true;
+}
+check("ソフト縁ブラシは境界がなだらか", softEdge);
+
+// ⌘Z 相当: 編集を除けば元に戻る(時系列適用の確認を兼ねる)
+const outUndo = applyChromaKey(src, W, H, { ...baseParams, edits: [] });
+check("編集を取り消すと元の結果に一致", outUndo.every((v, i) => v === out[i]));
 
 // --- 二値化(半透明の排除) ---
 console.log("二値化:");

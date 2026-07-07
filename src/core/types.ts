@@ -17,6 +17,23 @@ export interface SpotOp {
   global: boolean;
 }
 
+/** ブラシの1ストローク(mousedown〜mouseup) */
+export interface BrushStroke {
+  /** 軌跡(画像に対する正規化座標 0..1) */
+  points: { x: number; y: number }[];
+  /** ブラシ半径(画像の長辺に対する比率)— 解像度非依存 */
+  radius: number;
+  /** 縁の硬さ 0..1。1 = ハード縁、小さいほど外周がなだらかにぼける */
+  hardness: number;
+  /** opaque = 不透明に戻す、erase = 透明にする */
+  mode: "opaque" | "erase";
+}
+
+/** 手動編集の1操作。時系列順に適用され、⌘Z で新しい順に取り消される */
+export type EditOp =
+  | { kind: "spot"; op: SpotOp }
+  | { kind: "brush"; stroke: BrushStroke };
+
 export interface KeyParams {
   keyColor: KeyColor;
   /** この距離以下は完全透明 */
@@ -33,8 +50,9 @@ export interface KeyParams {
   binarize: boolean;
   /** 二値化のしきい値(この α 以上を完全不透明にする) */
   binarizeThreshold: number;
-  spotOps: SpotOp[];
+  /** スポット透過・ブラシの編集履歴(時系列順) */
+  edits: EditOp[];
 }
 
 export type ViewMode = "result" | "original" | "alpha" | "semi";
-export type Tool = "eyedropper" | "spot";
+export type Tool = "eyedropper" | "spot" | "brush";

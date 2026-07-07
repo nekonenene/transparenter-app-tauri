@@ -1,6 +1,6 @@
 import { store, type AppState } from "./state";
 import type { Tool, ViewMode } from "../core/types";
-import { clearSpotOps, undoSpotOp } from "./spot-tool";
+import { clearEdits, undoEdit } from "./spot-tool";
 
 interface SliderDef {
   key: keyof AppState;
@@ -72,6 +72,25 @@ const SPOT_SLIDER: SliderDef = {
   format: pct,
 };
 
+const BRUSH_SLIDERS: SliderDef[] = [
+  {
+    key: "brushSize",
+    label: "ブラシサイズ(画像に対する比率)",
+    min: 0.005,
+    max: 0.15,
+    step: 0.005,
+    format: pct,
+  },
+  {
+    key: "brushHardness",
+    label: "硬さ(縁のぼかし ←柔 / 硬→)",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    format: pct,
+  },
+];
+
 function pct(v: number): string {
   return `${Math.round(v * 100)}%`;
 }
@@ -80,6 +99,7 @@ export function setupControls(): void {
   buildSliders(el("sliders-main"), MAIN_SLIDERS);
   buildSliders(el("sliders-binarize"), [BINARIZE_SLIDER]);
   buildSliders(el("sliders-spot"), [SPOT_SLIDER]);
+  buildSliders(el("sliders-brush"), BRUSH_SLIDERS);
 
   // 二値化チェックボックス(OFF のときはしきい値スライダーを無効化)
   const binarizeCheck = el<HTMLInputElement>("binarize");
@@ -107,17 +127,20 @@ export function setupControls(): void {
     store.set({ viewMode: mode }),
   );
   setupSegment<Tool>("tool-switch", "tool", (tool) => store.set({ tool }));
+  setupSegment<"opaque" | "erase">("brush-mode", "brushmode", (mode) =>
+    store.set({ brushMode: mode }),
+  );
 
-  el("btn-undo").addEventListener("click", () => undoSpotOp());
-  el("btn-clear-spots").addEventListener("click", () => clearSpotOps());
+  el("btn-undo").addEventListener("click", () => undoEdit());
+  el("btn-clear-spots").addEventListener("click", () => clearEdits());
 
   store.subscribe((changed) => {
     if (changed.has("keyColor")) updateSwatch();
-    if (changed.has("spotOps")) updateSpotCount();
+    if (changed.has("edits")) updateEditCount();
     if (changed.has("tool")) updateToolHint();
   });
   updateSwatch();
-  updateSpotCount();
+  updateEditCount();
   updateToolHint();
 }
 
@@ -174,18 +197,26 @@ function updateSwatch(): void {
   el("key-value").textContent = `RGB(${r}, ${g}, ${b})`;
 }
 
-function updateSpotCount(): void {
-  const n = store.state.spotOps.length;
-  el("spot-count").textContent = n === 0 ? "クリック箇所: なし" : `クリック箇所: ${n}`;
-  (el<HTMLButtonElement>("btn-undo")).disabled = n === 0;
-  (el<HTMLButtonElement>("btn-clear-spots")).disabled = n === 0;
+function updateEditCount(): void {
+  const edits = store.state.edits;
+  const spots = edits.filter((e) => e.kind === "spot").length;
+  const brushes = edits.length - spots;
+  el("spot-count").textContent =
+    edits.length === 0
+      ? "編集: なし"
+      : `編集: ${edits.length}件(クリック ${spots} / ブラシ ${brushes})`;
+  (el<HTMLButtonElement>("btn-undo")).disabled = edits.length === 0;
+  (el<HTMLButtonElement>("btn-clear-spots")).disabled = edits.length === 0;
 }
 
 function updateToolHint(): void {
+  const tool = store.state.tool;
   el("tool-hint").textContent =
-    store.state.tool === "eyedropper"
+    tool === "eyedropper"
       ? "画像をクリックして背景色を取得します"
-      : "透過しきれず残った部分をクリックすると、その部分を透過します(⌘Z で取り消し)";
+      : tool === "spot"
+        ? "透過しきれず残った部分をクリックすると、その部分を透過します(⌘Z で取り消し)"
+        : "ドラッグで塗って透明・不透明を直接修正します(⌘Z で取り消し)";
 }
 
 function el<T extends HTMLElement = HTMLElement>(id: string): T {

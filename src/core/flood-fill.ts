@@ -2,44 +2,42 @@ import type { SpotOp } from "./types";
 import { prepareKey, distanceToKey, smoothstep } from "./color";
 
 /**
- * スポット透過(クリックで透過漏れを消す)の適用。
+ * スポット透過(クリックで透過漏れを消す)1操作分の適用。
  *
- * 各操作について、サンプル色に近いピクセルの α を下げる。
+ * サンプル色に近いピクセルの α を下げる。
  * - 連結モード: クリック地点からのフラッドフィルで到達できる範囲のみ。
  *   すでに透明なピクセル(α≈0)は通り抜けられないため、
  *   背景越しにキャラクター内の同系色(緑の瞳など)へ漏れない。
  * - 全体モード: 画像全体の同色ピクセルが対象。
  *
- * deconIdx には「そのピクセルの α を最終的に決めた操作」(0=メインキー、k+1=ops[k])
- * を記録し、後段の decontamination で正しい背景色を差し引けるようにする。
+ * deconIdx には「そのピクセルの α を最終的に決めた操作」の番号 opIdx を記録し、
+ * 後段の decontamination で正しい背景色を差し引けるようにする。
  */
-export function applySpotOps(
+export function applySpotOp(
   src: Uint8ClampedArray,
   width: number,
   height: number,
   alpha: Float32Array,
-  ops: SpotOp[],
+  op: SpotOp,
   deconIdx: Uint8Array,
+  opIdx: number,
 ): void {
-  for (let k = 0; k < ops.length && k < 254; k++) {
-    const op = ops[k];
-    const ref = prepareKey(op.color);
-    const t0 = op.tolerance;
-    const t1 = op.tolerance + Math.max(0.02, op.tolerance * 0.5);
+  const ref = prepareKey(op.color);
+  const t0 = op.tolerance;
+  const t1 = op.tolerance + Math.max(0.02, op.tolerance * 0.5);
 
-    if (op.global) {
-      for (let i = 0, p = 0; i < width * height; i++, p += 4) {
-        const d = distanceToKey(src[p], src[p + 1], src[p + 2], ref);
-        if (d >= t1) continue;
-        const a = smoothstep(t0, t1, d);
-        if (a < alpha[i]) {
-          alpha[i] = a;
-          deconIdx[i] = k + 1;
-        }
+  if (op.global) {
+    for (let i = 0, p = 0; i < width * height; i++, p += 4) {
+      const d = distanceToKey(src[p], src[p + 1], src[p + 2], ref);
+      if (d >= t1) continue;
+      const a = smoothstep(t0, t1, d);
+      if (a < alpha[i]) {
+        alpha[i] = a;
+        deconIdx[i] = opIdx;
       }
-    } else {
-      floodFill(src, width, height, alpha, deconIdx, op, ref, t0, t1, k + 1);
     }
+  } else {
+    floodFill(src, width, height, alpha, deconIdx, op, ref, t0, t1, opIdx);
   }
 }
 

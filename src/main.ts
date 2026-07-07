@@ -4,6 +4,7 @@ import { PreviewView } from "./app/preview";
 import { setupControls } from "./app/controls";
 import { sampleColor } from "./app/eyedropper";
 import { addSpotOp, setupUndoShortcut } from "./app/spot-tool";
+import { setupBrushTool } from "./app/brush-tool";
 import {
   loadImageFromPath,
   pickImagePath,
@@ -35,7 +36,7 @@ async function loadImage(path: string): Promise<void> {
   setStatus("読み込み中…");
   try {
     const img = await loadImageFromPath(path);
-    store.set({ original: img, srcPath: path, spotOps: [] });
+    store.set({ original: img, srcPath: path, edits: [] });
     preview.setOriginal(img);
 
     const info = await client.setImage(img);
@@ -97,7 +98,7 @@ store.subscribe((changed: Set<keyof AppState>) => {
   "click",
   (ev) => {
     const { original, tool } = store.state;
-    if (!original) return;
+    if (!original || tool === "brush") return; // ブラシは mousedown/move で処理
     const pos = preview.clientToNormalized(ev);
     if (!pos) return;
     if (tool === "eyedropper") {
@@ -136,6 +137,10 @@ btnSave.addEventListener("click", async () => {
 
 setupControls();
 setupUndoShortcut();
+setupBrushTool(
+  document.getElementById("preview") as HTMLCanvasElement,
+  preview,
+);
 setupDragDrop(
   (path) => void loadImage(path),
   (over) => {

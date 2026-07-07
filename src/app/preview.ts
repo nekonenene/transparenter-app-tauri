@@ -59,6 +59,18 @@ export class PreviewView {
     this.render();
   }
 
+  /** 表示中画像の描画矩形(CSS px)。未表示なら null。ブラシカーソルのサイズ計算用 */
+  fitRect(): { ox: number; oy: number; drawW: number; drawH: number } | null {
+    return this.lastFit
+      ? {
+          ox: this.lastFit.ox,
+          oy: this.lastFit.oy,
+          drawW: this.lastFit.drawW,
+          drawH: this.lastFit.drawH,
+        }
+      : null;
+  }
+
   /** クリック座標(クライアント座標)→ 画像の正規化座標。画像外なら null */
   clientToNormalized(ev: MouseEvent): { u: number; v: number } | null {
     const fit = this.lastFit;

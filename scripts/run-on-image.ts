@@ -50,7 +50,7 @@ const params = {
   alphaGamma: 1,
   binarize: false,
   binarizeThreshold: 0.5,
-  spotOps: [],
+  edits: [],
 };
 
 t = performance.now();
