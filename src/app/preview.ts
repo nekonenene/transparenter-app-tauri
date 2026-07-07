@@ -23,7 +23,8 @@ export class PreviewView {
 
   private originalCache: HTMLCanvasElement | null = null;
   private resultCache: HTMLCanvasElement | null = null;
-  private matteCache: HTMLCanvasElement | null = null;
+  private alphaCache: HTMLCanvasElement | null = null;
+  private semiCache: HTMLCanvasElement | null = null;
 
   private checker: CanvasPattern;
   private lastFit: FitRect | null = null;
@@ -40,14 +41,16 @@ export class PreviewView {
     this.originalCache = null;
     this.result = null;
     this.resultCache = null;
-    this.matteCache = null;
+    this.alphaCache = null;
+    this.semiCache = null;
     this.render();
   }
 
   setResult(img: ImageData): void {
     this.result = img;
     this.resultCache = null;
-    this.matteCache = null;
+    this.alphaCache = null;
+    this.semiCache = null;
     this.render();
   }
 
@@ -99,7 +102,7 @@ export class PreviewView {
     this.lastFit = { ox, oy, drawW, drawH, imgW, imgH };
 
     // 透明部分が見えるように画像の下にだけチェッカーボードを敷く
-    if (this.mode !== "matte") {
+    if (this.mode === "result" || this.mode === "original") {
       ctx.fillStyle = this.checker;
       ctx.fillRect(ox, oy, drawW, drawH);
     }
@@ -115,15 +118,32 @@ export class PreviewView {
         if (!this.originalCache)
           this.originalCache = toCanvas(this.original);
         return this.originalCache;
-      case "matte": {
+      case "alpha": {
+        // αの階調をグレースケールで表示(黒=透明、白=不透明)
         const r = this.result;
         if (!r) return null;
-        if (!this.matteCache) {
+        if (!this.alphaCache) {
+          const m = new ImageData(r.width, r.height);
+          for (let i = 0; i < r.width * r.height; i++) {
+            const a = r.data[i * 4 + 3];
+            m.data[i * 4] = a;
+            m.data[i * 4 + 1] = a;
+            m.data[i * 4 + 2] = a;
+            m.data[i * 4 + 3] = 255;
+          }
+          this.alphaCache = toCanvas(m);
+        }
+        return this.alphaCache;
+      }
+      case "semi": {
+        // 半透明ピクセルだけを赤で警告表示(書き出し時に残ると困るため)
+        const r = this.result;
+        if (!r) return null;
+        if (!this.semiCache) {
           const m = new ImageData(r.width, r.height);
           for (let i = 0; i < r.width * r.height; i++) {
             const a = r.data[i * 4 + 3];
             if (a > 0 && a < 255) {
-              // 半透明ピクセルは赤で警告表示(書き出し時に残ると困るため)
               m.data[i * 4] = 255;
               m.data[i * 4 + 1] = 45;
               m.data[i * 4 + 2] = 45;
@@ -134,9 +154,9 @@ export class PreviewView {
             }
             m.data[i * 4 + 3] = 255;
           }
-          this.matteCache = toCanvas(m);
+          this.semiCache = toCanvas(m);
         }
-        return this.matteCache;
+        return this.semiCache;
       }
       default:
         if (!this.result) {

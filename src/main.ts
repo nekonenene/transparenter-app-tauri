@@ -81,7 +81,7 @@ function updateSemiInfo(img: ImageData): void {
     semiInfo.classList.remove("warn");
   } else {
     const pct = (semi / n) * 100;
-    semiInfo.textContent = `半透明ピクセル: ${pct < 0.01 ? "0.01未満" : pct.toFixed(2)}%(マット表示で赤く表示)`;
+    semiInfo.textContent = `半透明ピクセル: ${pct < 0.01 ? "0.01未満" : pct.toFixed(2)}%(「半透明検出」で赤く表示)`;
     semiInfo.classList.add("warn");
   }
 }

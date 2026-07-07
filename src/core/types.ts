@@ -36,5 +36,5 @@ export interface KeyParams {
   spotOps: SpotOp[];
 }
 
-export type ViewMode = "result" | "original" | "matte";
+export type ViewMode = "result" | "original" | "alpha" | "semi";
 export type Tool = "eyedropper" | "spot";
