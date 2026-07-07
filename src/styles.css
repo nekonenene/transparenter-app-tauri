@@ -94,12 +94,11 @@ body {
   font-weight: 600;
 }
 
-.setting-row {
+.slider-scale {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
+  font-size: 11px;
+  color: var(--text-dim);
 }
 
 /* ---- main layout ---- */

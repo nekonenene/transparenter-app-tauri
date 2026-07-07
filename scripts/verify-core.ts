@@ -300,18 +300,18 @@ check("choke で縁が収縮する", shrunk);
 // --- PNG 書き出しオプション ---
 console.log("PNG書き出しオプション:");
 const { decode } = await import("fast-png");
-const pngFast = encodePng(out2, W, H, { compression: "fast", quantize: false });
-const pngSmall = encodePng(out2, W, H, { compression: "small", quantize: false });
-const pngQuant = encodePng(out2, W, H, { compression: "normal", quantize: true });
+const pngFast = encodePng(out2, W, H, { level: 1, quantize: false });
+const pngSmall = encodePng(out2, W, H, { level: 9, quantize: false });
+const pngQuant = encodePng(out2, W, H, { level: 6, quantize: true });
 check(
-  "最小サイズ ≤ 速い(圧縮レベルが効いている)",
+  "レベル9 ≤ レベル1(圧縮レベルが効いている)",
   pngSmall.byteLength <= pngFast.byteLength,
-  `small=${pngSmall.byteLength} fast=${pngFast.byteLength}`,
+  `9=${pngSmall.byteLength} 1=${pngFast.byteLength}`,
 );
 check(
-  "減色PNGは最小サイズよりさらに小さい",
+  "減色PNGはレベル9よりさらに小さい",
   pngQuant.byteLength < pngSmall.byteLength,
-  `quant=${pngQuant.byteLength} small=${pngSmall.byteLength}`,
+  `quant=${pngQuant.byteLength} 9=${pngSmall.byteLength}`,
 );
 // 圧縮レベル違いはデコードすると完全一致(ロスレスの確認)
 const decFast = decode(pngFast);

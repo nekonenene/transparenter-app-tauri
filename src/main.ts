@@ -134,7 +134,7 @@ btnSave.addEventListener("click", async () => {
   setStatus("フル解像度で書き出し中…");
   try {
     const png = await client.exportFull(store.buildParams(), {
-      compression: store.state.exportCompression,
+      level: store.state.exportLevel,
       quantize: store.state.exportQuantize,
     });
     const saved = await savePng(png, store.state.srcPath);

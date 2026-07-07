@@ -176,15 +176,22 @@ function setupSaveSettings(): void {
     popover.hidden = true;
   });
 
-  setupSegment<"fast" | "normal" | "small">("compression-mode", "comp", (c) =>
-    store.set({ exportCompression: c }),
-  );
+  const levelSlider = el<HTMLInputElement>("export-level");
+  const levelValue = el("export-level-value");
+  levelSlider.value = String(store.state.exportLevel);
+  levelValue.textContent = String(store.state.exportLevel);
+  levelSlider.addEventListener("input", () => {
+    const v = Number(levelSlider.value);
+    levelValue.textContent = String(v);
+    store.set({ exportLevel: v });
+  });
 
   const quantizeCheck = el<HTMLInputElement>("export-quantize");
   quantizeCheck.checked = store.state.exportQuantize;
   const syncQuantize = () => {
     // 減色時はパレットPNGになり zlib レベル選択は使われない
-    el("compression-mode").classList.toggle("dimmed", quantizeCheck.checked);
+    levelSlider.disabled = quantizeCheck.checked;
+    el("export-level-row").classList.toggle("dimmed", quantizeCheck.checked);
   };
   syncQuantize();
   quantizeCheck.addEventListener("change", () => {

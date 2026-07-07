@@ -27,12 +27,15 @@
             <p class="hint">
               PNG は常に無劣化です(減色を除く)。以下はファイルサイズと書き出し時間にのみ影響します。
             </p>
-            <div class="setting-row">
-              <span>圧縮</span>
-              <div id="compression-mode" class="segment">
-                <button data-comp="fast">速い</button>
-                <button data-comp="normal" class="active">標準</button>
-                <button data-comp="small">最小</button>
+            <div id="export-level-row" class="slider-row">
+              <div class="slider-head">
+                <span>圧縮レベル</span>
+                <span class="slider-value" id="export-level-value"></span>
+              </div>
+              <input type="range" id="export-level" min="0" max="9" step="1" />
+              <div class="slider-scale">
+                <span>←速度優先</span>
+                <span>サイズ優先→</span>
               </div>
             </div>
             <label class="check-row">

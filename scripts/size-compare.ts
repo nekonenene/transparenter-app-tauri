@@ -39,10 +39,11 @@ const out = applyChromaKey(rgba, png.width, png.height, {
 });
 
 const cases: [string, ExportOptions][] = [
-  ["速い (level 1)", { compression: "fast", quantize: false }],
-  ["標準 (level 6)", { compression: "normal", quantize: false }],
-  ["最小 (level 9)", { compression: "small", quantize: false }],
-  ["256色に減色", { compression: "normal", quantize: true }],
+  ["level 0", { level: 0, quantize: false }],
+  ["level 1", { level: 1, quantize: false }],
+  ["level 6", { level: 6, quantize: false }],
+  ["level 9", { level: 9, quantize: false }],
+  ["256色に減色", { level: 6, quantize: true }],
 ];
 for (const [label, opts] of cases) {
   const t = performance.now();
