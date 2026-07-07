@@ -158,7 +158,7 @@ function updateBrushSizeInfo(): void {
     1,
     Math.round(2 * norm * Math.max(original.width, original.height)),
   );
-  brushSizeValue.textContent = `約 ${px}px`;
+  brushSizeValue.textContent = `${px}px`;
 }
 
 preview.onZoomChange = (zoom) => {

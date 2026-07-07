@@ -36,7 +36,7 @@ export async function clearEdits(): Promise<void> {
   if (edits.length === 0) return;
   const spots = edits.filter((e) => e.kind === "spot").length;
   const ok = await askConfirm(
-    `${edits.length}件の編集(クリック ${spots} / ブラシ ${edits.length - spots})を全て削除します。\nこの操作は取り消せません。よろしいですか?`,
+    `${edits.length}件の編集(追加透過 ${spots} / ブラシ ${edits.length - spots})を全て削除します。\nこの操作は取り消せません。よろしいですか?`,
     "編集の全消去",
     "全て消去",
   );

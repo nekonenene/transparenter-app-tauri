@@ -244,7 +244,7 @@ function updateEditCount(): void {
   el("spot-count").textContent =
     edits.length === 0
       ? "編集: なし"
-      : `編集: ${edits.length}件(クリック ${spots} / ブラシ ${brushes})`;
+      : `編集: ${edits.length}件(追加透過 ${spots} / ブラシ ${brushes})`;
   (el<HTMLButtonElement>("btn-undo")).disabled = edits.length === 0;
   (el<HTMLButtonElement>("btn-clear-spots")).disabled = edits.length === 0;
 }
