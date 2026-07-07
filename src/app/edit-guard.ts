@@ -20,24 +20,31 @@ const MESSAGE =
   "キー色や透過調整を変更すると、ブラシでの編集は全て削除されます。\n" +
   "続行しますか?";
 
+/** 確認ダイアログ(Tauri ネイティブ。ブラウザ単体の開発時は window.confirm) */
+export async function askConfirm(
+  message: string,
+  title: string,
+  okLabel: string,
+): Promise<boolean> {
+  try {
+    return await ask(message, {
+      title,
+      kind: "warning",
+      okLabel,
+      cancelLabel: "キャンセル",
+    });
+  } catch {
+    return window.confirm(message);
+  }
+}
+
 /**
  * ブラシ編集がある場合に確認ダイアログを出し、OK ならブラシ編集を削除して
  * true を返す。ブラシ編集が無ければ何もせず true。
  */
 export async function confirmDiscardBrushEdits(): Promise<boolean> {
   if (!hasBrushEdits()) return true;
-  let ok: boolean;
-  try {
-    ok = await ask(MESSAGE, {
-      title: "ブラシ編集の削除",
-      kind: "warning",
-      okLabel: "削除して続行",
-      cancelLabel: "キャンセル",
-    });
-  } catch {
-    // ブラウザ単体(開発時)フォールバック
-    ok = window.confirm(MESSAGE);
-  }
+  const ok = await askConfirm(MESSAGE, "ブラシ編集の削除", "削除して続行");
   if (ok) removeBrushEdits();
   return ok;
 }

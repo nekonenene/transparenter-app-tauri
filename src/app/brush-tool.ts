@@ -41,8 +41,9 @@ export function setupBrushTool(
       hideCursor();
       return;
     }
-    // 半径は「画像の長辺に対する比率」なので、表示上は描画矩形の長辺に比例する
-    const rPx = brushSize * Math.max(fit.drawW, fit.drawH);
+    // brushSize は画面上の直径(CSS px)。ズームしてもカーソルの見た目は一定で、
+    // 画像上ではズームインするほど細かく塗れる
+    const rPx = brushSize / 2;
     cursor.style.display = "block";
     cursor.classList.toggle("erase", brushMode === "erase");
     cursor.style.width = `${rPx * 2}px`;
@@ -61,11 +62,13 @@ export function setupBrushTool(
     const s = store.state;
     if (s.tool !== "brush" || !s.original) return;
     const pos = preview.clientToNormalized(ev);
-    if (!pos) return;
+    const fit = preview.fitRect();
+    if (!pos || !fit) return;
     ev.preventDefault();
     stroke = {
       points: [{ x: pos.u, y: pos.v }],
-      radius: s.brushSize,
+      // 画面上の直径 → 画像長辺に対する半径比率(ストローク開始時のズームで確定)
+      radius: s.brushSize / 2 / Math.max(fit.drawW, fit.drawH),
       hardness: s.brushHardness,
       mode: s.brushMode,
     };

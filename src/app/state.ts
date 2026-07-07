@@ -17,7 +17,8 @@ export interface AppState {
   spotGlobal: boolean;
 
   brushMode: "opaque" | "erase";
-  brushSize: number; // 画像長辺に対する比率
+  /** ブラシの直径(画面上の CSS px)。ズームインするほど画像上では細かくなる */
+  brushSize: number;
   brushHardness: number;
 
   /** スポット透過・ブラシの編集履歴(⌘Z で新しい順に取り消し) */
@@ -56,7 +57,7 @@ class Store {
     spotTolerance: 0.12,
     spotGlobal: false,
     brushMode: "opaque",
-    brushSize: 0.04,
+    brushSize: 40,
     brushHardness: 0.7,
     edits: [],
     viewMode: "result",

@@ -1,5 +1,6 @@
 import { store } from "./state";
 import { sampleColor } from "./eyedropper";
+import { askConfirm } from "./edit-guard";
 
 /**
  * 追加透過ツール: クリック位置の色をサンプルし、編集履歴に積む。
@@ -29,9 +30,17 @@ export function undoEdit(): boolean {
   return true;
 }
 
-export function clearEdits(): void {
-  if (store.state.edits.length === 0) return;
-  store.set({ edits: [] });
+/** 全編集の消去。誤操作防止のため確認ダイアログを挟む */
+export async function clearEdits(): Promise<void> {
+  const edits = store.state.edits;
+  if (edits.length === 0) return;
+  const spots = edits.filter((e) => e.kind === "spot").length;
+  const ok = await askConfirm(
+    `${edits.length}件の編集(クリック ${spots} / ブラシ ${edits.length - spots})を全て削除します。\nこの操作は取り消せません。よろしいですか?`,
+    "編集の全消去",
+    "全て消去",
+  );
+  if (ok) store.set({ edits: [] });
 }
 
 export function setupUndoShortcut(): void {

@@ -83,11 +83,11 @@ const SPOT_SLIDER: SliderDef = {
 const BRUSH_SLIDERS: SliderDef[] = [
   {
     key: "brushSize",
-    label: "ブラシサイズ(画像に対する比率)",
-    min: 0.005,
-    max: 0.15,
-    step: 0.005,
-    format: pct,
+    label: "ブラシサイズ(画面上の大きさ)",
+    min: 4,
+    max: 150,
+    step: 2,
+    format: (v) => `${v}px`,
   },
   {
     key: "brushHardness",
@@ -140,7 +140,7 @@ export function setupControls(): void {
   );
 
   el("btn-undo").addEventListener("click", () => undoEdit());
-  el("btn-clear-spots").addEventListener("click", () => clearEdits());
+  el("btn-clear-spots").addEventListener("click", () => void clearEdits());
 
   store.subscribe((changed) => {
     if (changed.has("keyColor")) updateSwatch();
