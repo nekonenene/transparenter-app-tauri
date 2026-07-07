@@ -142,14 +142,15 @@ btnSave.addEventListener("click", async () => {
 // ---- ズーム ----
 
 const zoomLevel = document.getElementById("zoom-level")!;
-const brushSizeInfo = document.getElementById("brush-size-info")!;
 
-/** 現在のズームでブラシが画像上で何pxになるかの参考表示 */
+/** ブラシサイズの値表示(スライダー右)を、現在のズームでの画像上の直径に更新 */
 function updateBrushSizeInfo(): void {
+  const brushSizeValue = document.getElementById("brush-size-value");
+  if (!brushSizeValue) return;
   const { original, brushSize } = store.state;
   const fit = preview.fitRect();
   if (!original || !fit) {
-    brushSizeInfo.textContent = "";
+    brushSizeValue.textContent = "—";
     return;
   }
   const norm = brushSize / 2 / Math.max(fit.drawW, fit.drawH);
@@ -157,7 +158,7 @@ function updateBrushSizeInfo(): void {
     1,
     Math.round(2 * norm * Math.max(original.width, original.height)),
   );
-  brushSizeInfo.textContent = `画像上の直径: 約 ${px}px(ズームインすると細かく塗れます)`;
+  brushSizeValue.textContent = `約 ${px}px`;
 }
 
 preview.onZoomChange = (zoom) => {
@@ -195,6 +196,7 @@ window.addEventListener("keydown", (e) => {
 // ---- 初期化 ----
 
 setupControls();
+updateBrushSizeInfo();
 setupUndoShortcut();
 setupBrushTool(
   document.getElementById("preview") as HTMLCanvasElement,

@@ -12,6 +12,8 @@ interface SliderDef {
   format: (v: number) => string;
   /** true ならブラシ編集がある状態での変更時に確認ダイアログを出す */
   guarded?: boolean;
+  /** 値表示 span に付ける id(外部から動的に書き換える場合に指定) */
+  valueId?: string;
 }
 
 const MAIN_SLIDERS: SliderDef[] = [
@@ -83,12 +85,13 @@ const SPOT_SLIDER: SliderDef = {
 const BRUSH_SLIDERS: SliderDef[] = [
   {
     key: "brushSize",
-    label: "ブラシサイズ",
+    label: "ブラシサイズ(画像上の直径)",
     min: 4,
     max: 150,
     step: 2,
-    // px 表示は「画像上の直径」(main.ts の参考表示)に一本化する
+    // 値表示は main.ts がズームに応じた「画像上の直径」で動的に書き換える
     format: () => "",
+    valueId: "brush-size-value",
   },
   {
     key: "brushHardness",
@@ -181,6 +184,7 @@ function buildSliders(container: HTMLElement, defs: SliderDef[]): void {
     name.textContent = def.label;
     const value = document.createElement("span");
     value.className = "slider-value";
+    if (def.valueId) value.id = def.valueId;
     head.append(name, value);
 
     const input = document.createElement("input");
