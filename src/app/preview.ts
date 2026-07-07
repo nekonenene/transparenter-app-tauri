@@ -122,9 +122,16 @@ export class PreviewView {
           const m = new ImageData(r.width, r.height);
           for (let i = 0; i < r.width * r.height; i++) {
             const a = r.data[i * 4 + 3];
-            m.data[i * 4] = a;
-            m.data[i * 4 + 1] = a;
-            m.data[i * 4 + 2] = a;
+            if (a > 0 && a < 255) {
+              // 半透明ピクセルは赤で警告表示(書き出し時に残ると困るため)
+              m.data[i * 4] = 255;
+              m.data[i * 4 + 1] = 45;
+              m.data[i * 4 + 2] = 45;
+            } else {
+              m.data[i * 4] = a;
+              m.data[i * 4 + 1] = a;
+              m.data[i * 4 + 2] = a;
+            }
             m.data[i * 4 + 3] = 255;
           }
           this.matteCache = toCanvas(m);

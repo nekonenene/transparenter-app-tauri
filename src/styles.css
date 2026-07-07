@@ -234,6 +234,14 @@ input[type="range"] {
   accent-color: var(--accent);
 }
 
+.dimmed {
+  opacity: 0.45;
+}
+
+.hint.warn {
+  color: #ff6a6a;
+}
+
 .check-row {
   display: flex;
   align-items: center;

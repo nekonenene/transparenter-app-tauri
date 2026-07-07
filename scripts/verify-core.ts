@@ -79,6 +79,8 @@ const baseParams: KeyParams = {
   despill: 0.8,
   choke: 0,
   alphaGamma: 1,
+  binarize: false,
+  binarizeThreshold: 0.5,
   spotOps: [],
 };
 
@@ -164,6 +166,47 @@ const out2 = applyChromaKey(src, W, H, { ...baseParams, spotOps: [spot] });
 check("クリックでパッチが透明になる", px(out2, 60, 330).a === 0, `a=${px(out2, 60, 330).a}`);
 check("キャラ本体は影響を受けない", px(out2, 200, 240).a === 255);
 check("背景は透明のまま", px(out2, 5, 5).a === 0);
+
+// --- 二値化(半透明の排除) ---
+console.log("二値化:");
+const outB = applyChromaKey(src, W, H, {
+  ...baseParams,
+  binarize: true,
+  binarizeThreshold: 0.5,
+});
+let semiCount = 0;
+for (let i = 0; i < W * H; i++) {
+  const a = outB[i * 4 + 3];
+  if (a > 0 && a < 255) semiCount++;
+}
+check("二値化後に半透明ピクセルが1つも無い", semiCount === 0, `${semiCount} px`);
+check("二値化してもキャラ中心は不透明", px(outB, 200, 240).a === 255);
+check("二値化しても背景は透明", px(outB, 5, 5).a === 0);
+
+// しきい値以上の縁ピクセルは不透明に昇格し、背景色の混入も除去されている。
+// しきい値未満は透明に降格。画像全体から対象ピクセルを探して検証する。
+let promoted = false;
+let demoted = false;
+for (let i = 0; i < W * H && !(promoted && demoted); i++) {
+  const before = out[i * 4 + 3];
+  const after = outB[i * 4 + 3];
+  const x = i % W;
+  const y = (i - x) / W;
+  if (!promoted && before >= 128 && before < 255) {
+    const q = px(outB, x, y);
+    check(
+      `昇格ピクセル (${x},${y}) (α ${before}→255) に緑が残らない`,
+      after === 255 && q.g <= Math.max(q.r, q.b) + 12,
+      JSON.stringify(q),
+    );
+    promoted = true;
+  }
+  if (!demoted && before > 0 && before < 128) {
+    check(`しきい値未満のピクセル (${x},${y}) (α ${before}) は透明化`, after === 0, `a=${after}`);
+    demoted = true;
+  }
+}
+check("昇格・降格の対象ピクセルが両方存在した", promoted && demoted);
 
 // --- choke ---
 console.log("choke:");

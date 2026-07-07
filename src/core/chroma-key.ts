@@ -55,9 +55,17 @@ export function applyChromaKey(
     ...params.spotOps.map((o) => o.color),
   ];
 
+  const { binarize, binarizeThreshold } = params;
+
   for (let i = 0, p = 0; i < n; i++, p += 4) {
-    let a = alpha[i];
+    const a = alpha[i];
     if (a <= 0.004) continue; // 完全透明(out は 0 初期化済み)
+
+    // 二値化: しきい値未満は透明に、以上は不透明に確定。
+    // 色の復元(decontamination)は二値化前の α で行うため、
+    // 不透明に昇格したピクセルにも背景色が残らない。
+    const aOut = binarize ? (a >= binarizeThreshold ? 1 : 0) : a;
+    if (aOut <= 0) continue;
 
     let r = src[p];
     let g = src[p + 1];
@@ -88,7 +96,7 @@ export function applyChromaKey(
     out[p] = r;
     out[p + 1] = g;
     out[p + 2] = b;
-    out[p + 3] = Math.round(a * 255);
+    out[p + 3] = Math.round(aOut * 255);
   }
 
   return out;

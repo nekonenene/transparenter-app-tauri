@@ -48,6 +48,8 @@ const params = {
   despill: 0.8,
   choke: 0,
   alphaGamma: 1,
+  binarize: false,
+  binarizeThreshold: 0.5,
   spotOps: [],
 };
 

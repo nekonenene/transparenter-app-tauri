@@ -60,8 +60,31 @@ function requestPreview(): void {
   client.requestPreview(store.buildParams());
 }
 
-client.onPreview = (img) => preview.setResult(img);
+const semiInfo = document.getElementById("semi-info")!;
+
+client.onPreview = (img) => {
+  preview.setResult(img);
+  updateSemiInfo(img);
+};
 client.onError = (message) => setStatus(`処理エラー: ${message}`);
+
+/** 半透明ピクセルの割合を表示(プレビュー解像度基準) */
+function updateSemiInfo(img: ImageData): void {
+  const n = img.width * img.height;
+  let semi = 0;
+  for (let i = 0; i < n; i++) {
+    const a = img.data[i * 4 + 3];
+    if (a > 0 && a < 255) semi++;
+  }
+  if (semi === 0) {
+    semiInfo.textContent = "半透明ピクセル: なし";
+    semiInfo.classList.remove("warn");
+  } else {
+    const pct = (semi / n) * 100;
+    semiInfo.textContent = `半透明ピクセル: ${pct < 0.01 ? "0.01未満" : pct.toFixed(2)}%(マット表示で赤く表示)`;
+    semiInfo.classList.add("warn");
+  }
+}
 
 store.subscribe((changed: Set<keyof AppState>) => {
   if (PARAM_KEYS.some((k) => changed.has(k))) requestPreview();

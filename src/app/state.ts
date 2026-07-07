@@ -10,6 +10,8 @@ export interface AppState {
   despill: number;
   choke: number;
   alphaGamma: number;
+  binarize: boolean;
+  binarizeThreshold: number;
 
   spotTolerance: number;
   spotGlobal: boolean;
@@ -26,6 +28,8 @@ export const PARAM_KEYS: (keyof AppState)[] = [
   "despill",
   "choke",
   "alphaGamma",
+  "binarize",
+  "binarizeThreshold",
   "spotOps",
 ];
 
@@ -41,6 +45,8 @@ class Store {
     despill: 0.8,
     choke: 0,
     alphaGamma: 1,
+    binarize: false,
+    binarizeThreshold: 0.5,
     spotTolerance: 0.12,
     spotGlobal: false,
     spotOps: [],
@@ -75,6 +81,8 @@ class Store {
       despill: s.despill,
       choke: s.choke,
       alphaGamma: s.alphaGamma,
+      binarize: s.binarize,
+      binarizeThreshold: s.binarizeThreshold,
       spotOps: s.spotOps,
     };
   }

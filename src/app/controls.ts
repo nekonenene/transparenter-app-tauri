@@ -54,6 +54,15 @@ const MAIN_SLIDERS: SliderDef[] = [
   },
 ];
 
+const BINARIZE_SLIDER: SliderDef = {
+  key: "binarizeThreshold",
+  label: "しきい値(これ以上を不透明化)",
+  min: 0.05,
+  max: 0.95,
+  step: 0.05,
+  format: pct,
+};
+
 const SPOT_SLIDER: SliderDef = {
   key: "spotTolerance",
   label: "許容量(消す色の範囲)",
@@ -69,7 +78,22 @@ function pct(v: number): string {
 
 export function setupControls(): void {
   buildSliders(el("sliders-main"), MAIN_SLIDERS);
+  buildSliders(el("sliders-binarize"), [BINARIZE_SLIDER]);
   buildSliders(el("sliders-spot"), [SPOT_SLIDER]);
+
+  // 二値化チェックボックス(OFF のときはしきい値スライダーを無効化)
+  const binarizeCheck = el<HTMLInputElement>("binarize");
+  const binarizeSlider = el("sliders-binarize").querySelector("input")!;
+  const syncBinarize = () => {
+    binarizeSlider.disabled = !binarizeCheck.checked;
+    el("sliders-binarize").classList.toggle("dimmed", !binarizeCheck.checked);
+  };
+  binarizeCheck.checked = store.state.binarize;
+  syncBinarize();
+  binarizeCheck.addEventListener("change", () => {
+    store.set({ binarize: binarizeCheck.checked });
+    syncBinarize();
+  });
 
   // 全体適用チェックボックス
   const globalCheck = el<HTMLInputElement>("spot-global");

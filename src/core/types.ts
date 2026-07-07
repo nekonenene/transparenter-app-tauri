@@ -29,6 +29,10 @@ export interface KeyParams {
   choke: number;
   /** αのガンマ。>1 で縁が薄く、<1 で縁が濃くなる */
   alphaGamma: number;
+  /** true なら α を 0 or 1 に二値化し、半透明ピクセルを出力しない */
+  binarize: boolean;
+  /** 二値化のしきい値(この α 以上を完全不透明にする) */
+  binarizeThreshold: number;
   spotOps: SpotOp[];
 }
 
