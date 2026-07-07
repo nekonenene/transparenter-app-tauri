@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transparenter — 画像透過ツール</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <div id="app">
+      <header id="toolbar">
+        <button id="btn-open" class="primary">画像を開く</button>
+        <div id="view-switch" class="segment">
+          <button data-mode="result" class="active">結果</button>
+          <button data-mode="original">元画像</button>
+          <button data-mode="matte">マット</button>
+        </div>
+        <span id="status"></span>
+        <button id="btn-save" class="primary" disabled>PNGを保存</button>
+      </header>
+
+      <main>
+        <div id="canvas-wrap">
+          <canvas id="preview"></canvas>
+          <div id="dropzone">
+            <p>ここに画像をドラッグ&amp;ドロップ<br />または「画像を開く」</p>
+          </div>
+        </div>
+
+        <aside id="panel">
+          <section>
+            <h3>キー色(背景色)</h3>
+            <div class="key-row">
+              <div id="key-swatch"></div>
+              <span id="key-value">未設定</span>
+            </div>
+            <div id="tool-switch" class="segment">
+              <button data-tool="eyedropper" class="active">スポイト</button>
+              <button data-tool="spot">追加透過</button>
+            </div>
+            <p class="hint" id="tool-hint"></p>
+          </section>
+
+          <section>
+            <h3>透過調整</h3>
+            <div id="sliders-main"></div>
+          </section>
+
+          <section>
+            <h3>追加透過(残った部分をクリックで消す)</h3>
+            <div id="sliders-spot"></div>
+            <label class="check-row">
+              <input type="checkbox" id="spot-global" />
+              同じ色を画像全体から透過
+            </label>
+            <div class="button-row">
+              <button id="btn-undo" disabled>元に戻す (⌘Z)</button>
+              <button id="btn-clear-spots" disabled>全て消去</button>
+            </div>
+            <p class="hint" id="spot-count"></p>
+          </section>
+        </aside>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,123 @@
+import { PARAM_KEYS, store, type AppState } from "./app/state";
+import { ProcessorClient } from "./app/worker-client";
+import { PreviewView } from "./app/preview";
+import { setupControls } from "./app/controls";
+import { sampleColor } from "./app/eyedropper";
+import { addSpotOp, setupUndoShortcut } from "./app/spot-tool";
+import {
+  loadImageFromPath,
+  pickImagePath,
+  savePng,
+  setupDragDrop,
+} from "./app/io";
+
+const client = new ProcessorClient();
+const preview = new PreviewView(
+  document.getElementById("preview") as HTMLCanvasElement,
+);
+
+const statusEl = document.getElementById("status")!;
+const dropzone = document.getElementById("dropzone")!;
+const btnOpen = document.getElementById("btn-open") as HTMLButtonElement;
+const btnSave = document.getElementById("btn-save") as HTMLButtonElement;
+
+function setStatus(text: string): void {
+  statusEl.textContent = text;
+}
+
+// ---- 画像読み込み ----
+
+let loading = false;
+
+async function loadImage(path: string): Promise<void> {
+  if (loading) return;
+  loading = true;
+  setStatus("読み込み中…");
+  try {
+    const img = await loadImageFromPath(path);
+    store.set({ original: img, srcPath: path, spotOps: [] });
+    preview.setOriginal(img);
+
+    const info = await client.setImage(img);
+    store.set({ keyColor: info.estimatedKey });
+    requestPreview();
+
+    dropzone.classList.add("hidden");
+    btnSave.disabled = false;
+    const name = path.split("/").pop()?.split("\\").pop() ?? path;
+    setStatus(`${name} — ${img.width}×${img.height}px(背景色を自動推定しました)`);
+  } catch (e) {
+    setStatus(`読み込みに失敗しました: ${e instanceof Error ? e.message : e}`);
+  } finally {
+    loading = false;
+  }
+}
+
+// ---- プレビュー処理 ----
+
+function requestPreview(): void {
+  if (!store.state.original) return;
+  client.requestPreview(store.buildParams());
+}
+
+client.onPreview = (img) => preview.setResult(img);
+client.onError = (message) => setStatus(`処理エラー: ${message}`);
+
+store.subscribe((changed: Set<keyof AppState>) => {
+  if (PARAM_KEYS.some((k) => changed.has(k))) requestPreview();
+  if (changed.has("viewMode")) preview.setMode(store.state.viewMode);
+});
+
+// ---- キャンバスクリック(スポイト / 追加透過) ----
+
+(document.getElementById("preview") as HTMLCanvasElement).addEventListener(
+  "click",
+  (ev) => {
+    const { original, tool } = store.state;
+    if (!original) return;
+    const pos = preview.clientToNormalized(ev);
+    if (!pos) return;
+    if (tool === "eyedropper") {
+      const color = sampleColor(original, pos.u, pos.v);
+      store.set({ keyColor: color });
+      setStatus(`キー色を取得: RGB(${color.r}, ${color.g}, ${color.b})`);
+    } else {
+      addSpotOp(pos.u, pos.v);
+    }
+  },
+);
+
+// ---- 開く / 保存 ----
+
+btnOpen.addEventListener("click", async () => {
+  const path = await pickImagePath();
+  if (path) await loadImage(path);
+});
+
+btnSave.addEventListener("click", async () => {
+  if (!store.state.original) return;
+  btnSave.disabled = true;
+  setStatus("フル解像度で書き出し中…");
+  try {
+    const png = await client.exportFull(store.buildParams());
+    const saved = await savePng(png, store.state.srcPath);
+    setStatus(saved ? `保存しました: ${saved}` : "保存をキャンセルしました");
+  } catch (e) {
+    setStatus(`保存に失敗しました: ${e instanceof Error ? e.message : e}`);
+  } finally {
+    btnSave.disabled = false;
+  }
+});
+
+// ---- 初期化 ----
+
+setupControls();
+setupUndoShortcut();
+setupDragDrop(
+  (path) => void loadImage(path),
+  (over) => {
+    if (store.state.original) return;
+    dropzone.classList.toggle("hover", over);
+  },
+);
+setStatus("画像を開いてください");
