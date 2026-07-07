@@ -1,13 +1,17 @@
 /**
- * アプリアイコン生成: 緑背景で生成されたアイコン画像を自前のクロマキー
- * パイプラインで切り抜き、macOS のアイコングリッド(1024px 中 824px)に
- * 配置した app-icon.png を出力する。
+ * アプリアイコン生成。
  *
  *   npx esbuild scripts/make-icon.ts --bundle --format=esm --platform=node --outfile=<out>.mjs
- *   node <out>.mjs <input.png> <output.png> [despill=0.9]
+ *   node <out>.mjs <input.png> <output.png> --full        # 全面モード(推奨)
+ *   node <out>.mjs <input.png> <output.png> [despill=0.9] # 切り抜きモード(旧方式)
  *
- * 注意: キー背景と同系色がデザイン内にある場合(青キー×ネイビーのスポイト等)は
- * despill に 0 を指定しないとデザイン側の色が脱色される。
+ * - 全面モード: キャンバス全面のアートワークを 1024px に縮小するだけ。
+ *   macOS Tahoe 以降は OS が角丸マスクを適用するため、透明マージン+自前 squircle の
+ *   アイコンは灰色の下地に載せられて縮小表示されてしまう。全面アートワークを渡すのが
+ *   正解(Windows の ico も全面で問題ない)
+ * - 切り抜きモード: クロマキー背景で生成された画像を自前パイプラインで切り抜き、
+ *   1024px 中 824px に配置する(Big Sur〜Sonoma 流)。キー背景と同系色がデザイン内に
+ *   ある場合(青キー×ネイビー等)は despill に 0 を指定しないとデザイン側が脱色される
  *
  * その後 `npm run tauri icon <output.png>` で src-tauri/icons/ を再生成する。
  */
@@ -22,7 +26,9 @@ const CANVAS = 1024;
 const CONTENT = 824; // Apple のアイコングリッド: squircle は 1024px 中 824px
 
 const [input, output] = process.argv.slice(2);
-const despillAmount = process.argv[4] !== undefined ? Number(process.argv[4]) : 0.9;
+const fullBleed = process.argv[4] === "--full";
+const despillAmount =
+  !fullBleed && process.argv[4] !== undefined ? Number(process.argv[4]) : 0.9;
 const png = decode(readFileSync(input));
 const n = png.width * png.height;
 let rgba: Uint8ClampedArray;
@@ -36,6 +42,16 @@ if (png.channels === 4) {
     rgba[i * 4 + 2] = png.data[i * 3 + 2];
     rgba[i * 4 + 3] = 255;
   }
+}
+
+if (fullBleed) {
+  const scaled = resizeToFit(rgba, png.width, png.height, CANVAS);
+  writeFileSync(
+    output,
+    encodePng(scaled.data, scaled.width, scaled.height, { level: 9, quantize: false }),
+  );
+  console.log(`wrote ${output} (${scaled.width}x${scaled.height}, full-bleed)`);
+  process.exit(0);
 }
 
 // 背景の緑をキーイング
