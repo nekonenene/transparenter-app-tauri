@@ -4,7 +4,10 @@
  * 配置した app-icon.png を出力する。
  *
  *   npx esbuild scripts/make-icon.ts --bundle --format=esm --platform=node --outfile=<out>.mjs
- *   node <out>.mjs <input.png> <output.png>
+ *   node <out>.mjs <input.png> <output.png> [despill=0.9]
+ *
+ * 注意: キー背景と同系色がデザイン内にある場合(青キー×ネイビーのスポイト等)は
+ * despill に 0 を指定しないとデザイン側の色が脱色される。
  *
  * その後 `npm run tauri icon <output.png>` で src-tauri/icons/ を再生成する。
  */
@@ -19,6 +22,7 @@ const CANVAS = 1024;
 const CONTENT = 824; // Apple のアイコングリッド: squircle は 1024px 中 824px
 
 const [input, output] = process.argv.slice(2);
+const despillAmount = process.argv[4] !== undefined ? Number(process.argv[4]) : 0.9;
 const png = decode(readFileSync(input));
 const n = png.width * png.height;
 let rgba: Uint8ClampedArray;
@@ -41,7 +45,7 @@ const cut = applyChromaKey(rgba, png.width, png.height, {
   keyColor: key,
   similarity: 0.1,
   smoothness: 0.08,
-  despill: 0.9,
+  despill: despillAmount,
   choke: 0,
   alphaGamma: 1,
   binarize: false,
